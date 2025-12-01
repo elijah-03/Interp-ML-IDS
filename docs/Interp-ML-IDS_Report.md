@@ -80,25 +80,35 @@ Network traffic data is notoriously imbalanced, with benign traffic overwhelming
 2.  **Balanced SMOTE**: We use the Synthetic Minority Over-sampling Technique (SMOTE) to upsample minority attack classes (like Web Attacks) to ensure the model learns their distinct patterns effectively.
 
 ### 3.3 The "Bridge": Interactive Interpretability
-To bridge the gap between the model and the analyst, we implemented a **Sensitivity Analysis** module.
+To bridge the gap between the model and the analyst, we implemented a multi-layered interpretability module that combines statistical context, local feature attribution, and interactive counterfactual analysis.
 
-#### 3.3.1 Mathematical Basis: SHAP Values
+#### 3.3.1 Statistical Context: Z-Score Analysis
+Before exploring complex model interactions, analysts need to understand *how* the current flow deviates from typical traffic. We calculate the Z-score for each feature $x_i$:
+
+$$ Z_i = \frac{x_i - \mu_i}{\sigma_i} $$
+
+Where $\mu_i$ and $\sigma_i$ are the mean and standard deviation of feature $i$ in the training set. Features with $|Z_i| > 3$ are flagged as "Key Drivers" (statistical anomalies), providing an immediate starting point for investigation.
+
+#### 3.3.2 Mathematical Basis: SHAP Values
 We employ **SHAP (SHapley Additive exPlanations)** to provide local explanations. The SHAP value $\phi_j$ for feature $j$ is defined as the average marginal contribution of feature value $x_j$ across all possible coalitions of features:
 
 $$ \phi_j(f,x) = \sum_{z' \subseteq x'} \frac{|z'|! (M - |z'| - 1)!}{M!} [f_x(z') - f_x(z' \setminus j)] $$
 
-This ensures fair attribution of the prediction output among input features.
+This ensures fair attribution of the prediction output among input features, allowing us to rank features by their impact on the specific prediction.
 
-#### 3.3.2 Algorithm: Real-Time Sensitivity Analysis
-The core novelty of our system is the interactive "what-if" analysis. The algorithm is as follows:
+#### 3.3.3 Algorithm: Real-Time Sensitivity Analysis
+The core novelty of our system is the interactive "what-if" analysis, which allows analysts to probe decision boundaries. The algorithm is as follows:
 
-1.  **Input**: User selects a target feature `F_i` and a new value `v_new`.
-2.  **Vector Construction**: Create a modified feature vector `X'_user = {x_1, ..., x_i=v_new, ..., x_n}`.
-3.  **Inference**: Compute `P(Attack | X'_user) = Model.predict_proba(X'_user)`.
-4.  **Delta Calculation**: `ΔP = P(Attack | X'_user) - P(Attack | X_original)`.
-5.  **Visualization**: Update the probability distribution chart and highlight the shift.
+1.  **Input**: User selects a target feature `F_i` and a new value `v_new` via a logarithmic slider.
+2.  **Vector Construction**: A modified feature vector is created: `X'_user = {x_1, ..., x_i=v_new, ..., x_n}`.
+3.  **Inference**: The XGBoost model re-evaluates the probability: `P(Attack | X'_user) = Model.predict_proba(X'_user)`.
+4.  **Delta Calculation**: The system computes the shift in confidence: `ΔP = P(Attack | X'_user) - P(Attack | X_original)`.
+5.  **Visualization**: The probability distribution chart updates in real-time (<50ms latency), visually demonstrating the feature's causal role.
 
 This allows an analyst to answer complex questions. For example, by sliding the `Dst Port` from 80 to 8080, they can observe if the model considers non-standard ports as inherently more suspicious for a given flow profile.
+
+#### 3.3.4 Counterfactual Explanations ("Safety Prescriptions")
+To move from "why is this an attack?" to "how do we fix it?", we implement a counterfactual generation module. This algorithm searches for the nearest feature vector $X_{cf}$ such that $Model(X_{cf}) = Benign$ and the distance $d(X, X_{cf})$ is minimized. In our system, we use a heuristic approach based on the "Key Drivers" identified in 3.3.1, suggesting minimal adjustments (e.g., "Reduce Flow Duration by 15%") to cross the decision boundary.
 
 ## 4. Evaluation
 ### 4.1 Performance Metrics

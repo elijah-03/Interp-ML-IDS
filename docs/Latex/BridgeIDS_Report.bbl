@@ -57,4 +57,9 @@ M.~T. Ribeiro, S.~Singh, and C.~Guestrin, ``"why should {I} trust you?"
   22nd ACM SIGKDD International Conference on Knowledge Discovery and Data
   Mining}, 2016, pp. 1135--1144.
 
+\bibitem{chawla2002smote}
+N.~V. Chawla, K.~W. Bowyer, L.~O. Hall, and W.~P. Kegelmeyer, ``{SMOTE}:
+  synthetic minority over-sampling technique,'' \emph{Journal of Artificial
+  Intelligence Research}, vol.~16, pp. 321--357, 2002.
+
 \end{thebibliography}

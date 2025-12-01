@@ -13,44 +13,44 @@ Database file #1: references.bib
 -- See the "IEEEtran_bst_HOWTO.pdf" manual for usage information.
 
 Done.
-You've used 10 entries,
+You've used 8 entries,
             4087 wiz_defined-function locations,
-            881 strings with 9218 characters,
-and the built_in function-call counts, 8015 in all, are:
-= -- 623
-> -- 181
-< -- 70
-+ -- 101
-- -- 29
-* -- 381
-:= -- 1152
-add.period$ -- 21
-call.type$ -- 10
-change.case$ -- 9
-chr.to.int$ -- 171
-cite$ -- 10
-duplicate$ -- 561
-empty$ -- 688
-format.name$ -- 37
-if$ -- 1886
+            865 strings with 8795 characters,
+and the built_in function-call counts, 6385 in all, are:
+= -- 484
+> -- 135
+< -- 57
++ -- 77
+- -- 20
+* -- 301
+:= -- 905
+add.period$ -- 17
+call.type$ -- 8
+change.case$ -- 7
+chr.to.int$ -- 147
+cite$ -- 8
+duplicate$ -- 440
+empty$ -- 573
+format.name$ -- 26
+if$ -- 1506
 int.to.chr$ -- 0
-int.to.str$ -- 10
-missing$ -- 93
-newline$ -- 53
-num.names$ -- 10
-pop$ -- 230
+int.to.str$ -- 8
+missing$ -- 71
+newline$ -- 47
+num.names$ -- 8
+pop$ -- 183
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 2
-skip$ -- 629
+skip$ -- 502
 stack$ -- 0
-substring$ -- 413
-swap$ -- 451
-text.length$ -- 13
+substring$ -- 349
+swap$ -- 348
+text.length$ -- 8
 text.prefix$ -- 0
 top$ -- 5
-type$ -- 10
+type$ -- 8
 warning$ -- 0
-while$ -- 39
-width$ -- 12
-write$ -- 114
+while$ -- 32
+width$ -- 9
+write$ -- 93

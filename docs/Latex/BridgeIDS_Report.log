@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.9.2)  1 DEC 2025 16:05
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.9.2)  1 DEC 2025 16:24
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -503,81 +503,12 @@ LaTeX Font Info:    Font shape `OML/ptm/m/n' in size <10> not available
 
 
 ]
-LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 1
-03.
- (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ot1pcr.fd
-File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
-)
-Underfull \hbox (badness 10000) in paragraph at lines 103--104
-\OT1/ptm/m/n/10 trained model and pre-pro-cess-ing ar-ti-facts (\OT1/pcr/m/n/10
- scaler\OT1/ptm/m/n/10 ,
+Underfull \hbox (badness 2229) in paragraph at lines 128--129
+[]\OT1/ptm/b/n/10 Exceptional Pre-ci-sion\OT1/ptm/m/n/10 : Brute Force (99.96%)
+, DDoS
  []
 
-
-Underfull \hbox (badness 2197) in paragraph at lines 103--104
-\OT1/pcr/m/n/10 label_encoder\OT1/ptm/m/n/10 ), en-sur-ing low-latency load-ing
- dur-ing
- []
-
-
-Underfull \hbox (badness 1960) in paragraph at lines 126--127
-[]\OT1/pcr/m/n/10 Flow IAT Mean\OT1/ptm/m/n/10 : Mean inter-arrival time be-twe
-en
- []
-
-[2]
-Underfull \hbox (badness 10000) in paragraph at lines 183--184
-[]\OT1/ptm/m/n/10 Label en-cod-ing is per-formed via
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 183--184
-\OT1/pcr/m/n/10 sklearn.preprocessing.LabelEncoder \OT1/ptm/m/n/10 for
- []
-
-
-Underfull \hbox (badness 1748) in paragraph at lines 195--196
-[]\OT1/ptm/m/n/10 Network traf-fic data ex-hibits ex-treme im-bal-ance (Be-
- []
-
-
-Overfull \hbox (14.67427pt too wide) in paragraph at lines 210--225
- [][] 
- []
-
-LaTeX Font Info:    Font shape `OML/ptm/m/n' in size <8> not available
-(Font)              Font shape `OML/cmm/m/it' tried instead on input line 272.
-[3]
-Underfull \hbox (badness 10000) in paragraph at lines 306--307
-[]\OT1/ptm/b/n/10 Delta Cal-cu-la-tion\OT1/ptm/m/n/10 : The sys-tem com-putes t
-he
- []
-
-
-Underfull \hbox (badness 4779) in paragraph at lines 306--307
-\OT1/ptm/m/n/10 shift in con-fi-dence: $\OT1/cmr/m/n/10 ^^A\OML/cmm/m/it/10 P \
-OT1/cmr/m/n/10 = \OML/cmm/m/it/10 P\OT1/cmr/m/n/10 ([]\OMS/cmsy/m/n/10 j\OML/cm
-m/m/it/10 X[]\OT1/cmr/m/n/10 ) \OMS/cmsy/m/n/10 ^^@
- []
-
-
-Underfull \hbox (badness 1394) in paragraph at lines 342--344
-[]\OT1/ptm/b/n/10 Confusion Ma-trix: \OT1/ptm/m/n/10 The con-fu-sion ma-trix re
--veals the
- []
-
-[4]
-Underfull \hbox (badness 4673) in paragraph at lines 377--378
-[]\OT1/ptm/b/n/10 Single Dataset\OT1/ptm/m/n/10 : Eval-u-a-tion lim-ited to CSE
--CIC-
- []
-
-
-Underfull \hbox (badness 1675) in paragraph at lines 377--378
-\OT1/ptm/m/n/10 IDS2018; gen-er-al-iza-tion to other datasets (UNSW-
- []
-
-(./BridgeIDS_Report.bbl)
+[2] (./BridgeIDS_Report.bbl)
 
 ** Conference Paper **
 Before submitting the final camera ready copy, remember to:
@@ -589,40 +520,36 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[5] (./BridgeIDS_Report.aux)
+[3
+
+] (./BridgeIDS_Report.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
 Package rerunfilecheck Info: File `BridgeIDS_Report.out' has not changed.
-(rerunfilecheck)             Checksum: 2902AAD2F3D9D8FE53140E6442C19C34;6422.
+(rerunfilecheck)             Checksum: 3C84DE36A9F18C9C20D9611D575D2079;2832.
  ) 
 Here is how much of TeX's memory you used:
- 11472 strings out of 474222
- 177717 string characters out of 5748734
+ 11370 strings out of 474222
+ 176257 string characters out of 5748734
  1947975 words of memory out of 5000000
- 33487 multiletter control sequences out of 15000+600000
- 598902 words of font info for 112 fonts, out of 8000000 for 9000
+ 33432 multiletter control sequences out of 15000+600000
+ 597282 words of font info for 109 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,9n,79p,1227b,524s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></us
-r/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/shar
-e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texli
-ve/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texlive/texm
-f-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/
-fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/ty
-pe1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/pu
-blic/amsfonts/cm/cmsy5.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/am
-sfonts/cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
-cm/cmsy8.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb>
-</usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/tex
-live/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></usr/share/texlive/texmf-dis
-t/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/u
-rw/times/utmri8a.pfb>
-Output written on BridgeIDS_Report.pdf (5 pages, 207322 bytes).
+ 75i,8n,79p,1237b,489s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></us
+r/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share
+/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texliv
+e/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texlive/texmf-dist/
+fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw
+/times/utmbi8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.
+pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on BridgeIDS_Report.pdf (3 pages, 122407 bytes).
 PDF statistics:
- 315 PDF objects out of 1000 (max. 8388607)
- 275 compressed objects within 3 object streams
- 80 named destinations out of 1000 (max. 500000)
- 265 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 175 PDF objects out of 1000 (max. 8388607)
+ 150 compressed objects within 2 object streams
+ 39 named destinations out of 1000 (max. 500000)
+ 137 words of extra memory for PDF output out of 10000 (max. 10000000)
 

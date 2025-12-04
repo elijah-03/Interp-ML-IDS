@@ -41,7 +41,7 @@ def plot_system_architecture():
         "pipeline": {"facecolor": "#e3f2fd", "edgecolor": "#2196f3"},
         "model": {"facecolor": "#f3e5f5", "edgecolor": "#9c27b0"},
         "dashboard": {"facecolor": "#e0f2f1", "edgecolor": "#009688"},
-        # CRITICAL FIX: zorder=20 ensures text is always on top of boxes
+        # zorder=20 ensures text is always on top of boxes
         "text": {
             "ha": "center",
             "va": "center",
@@ -171,7 +171,6 @@ def plot_system_architecture():
     ax.text(11.1, 2.25, "Interactive\nDashboard", **styles["text"])
 
     # Main Flow Arrows
-    # Using 'simple' arrowstyle with explicit sizes for boldness
     arrow_style = dict(
         arrowstyle="simple,tail_width=0.5,head_width=1.2,head_length=1.0",
         color="#555555",
@@ -241,11 +240,10 @@ def plot_shap_waterfall():
         values.append(values[-1] + c)
     final_value = values[-1]
 
-    # Increased figure width to prevent text cutoff
     fig, ax = plt.subplots(figsize=(9, 4.5))
 
     # Adjust x-limits to ensure room for labels on the left
-    min_val = min(values) - 1.0  # Extra padding
+    min_val = min(values) - 1.0
     max_val = max(values) + 1.0
     ax.set_xlim(min_val, max_val)
 

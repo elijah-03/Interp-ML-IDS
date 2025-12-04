@@ -13,7 +13,7 @@ from src.config import PORT_MAP, MODEL_PATH, SCALER_PATH, LE_PATH, FEATURE_LIST_
 # Configuration
 DATASET_DIR = "/home/elijah/Documents/CPS373/Interp-ML-IDS/CSECICIDS2018_improved"
 BATCH_SIZE = 100000
-SAMPLE_FRACTION = 0.05  # Use smaller fraction for rule evaluation to be faster
+SAMPLE_FRACTION = 0.05
 
 
 def load_artifacts():
@@ -135,7 +135,7 @@ def preprocess_batch(df, scaler, le, feature_list):
 def detect_attack_pattern(predicted_class, input_data, z_scores, feature_list):
     """
     Detect and describe attack patterns based on feature combinations.
-    Copied from app.py for evaluation.
+    Detect and describe attack patterns based on feature combinations.
     """
 
     def get_z(feature_name):

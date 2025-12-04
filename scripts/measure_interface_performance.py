@@ -204,11 +204,11 @@ def main():
     try:
         response = requests.get(BASE_URL)
         if response.status_code != 200:
-            print(f"\n❌ Error: Flask server not responding at {BASE_URL}")
+            print(f"\n Error: Flask server not responding at {BASE_URL}")
             print("Please start the server with: python app.py")
             return
     except requests.exceptions.ConnectionError:
-        print(f"\n❌ Error: Cannot connect to Flask server at {BASE_URL}")
+        print(f"\n Error: Cannot connect to Flask server at {BASE_URL}")
         print("Please start the server with: python app.py")
         return
 
@@ -232,7 +232,7 @@ def main():
         if (i + 1) % 10 == 0:
             print(f"  Completed {i + 1}/{NUM_TRIALS} trials")
 
-    print(f"\n📊 Response Time Statistics (n={len(response_times)}):")
+    print(f"\n Response Time Statistics (n={len(response_times)}):")
     print(f"  Mean:   {np.mean(response_times):.2f} ms")
     print(f"  Median: {np.median(response_times):.2f} ms")
     print(f"  Std:    {np.std(response_times):.2f} ms")
@@ -257,7 +257,7 @@ def main():
         dos_features, feature_to_test, num_steps=10
     )
 
-    print(f"\n📊 What-If Analysis Statistics:")
+    print("\n What-If Analysis Statistics:")
     print(f"  Total time (10 requests):     {total_time:.2f} ms")
     print(f"  Average per request:          {np.mean(request_times):.2f} ms")
     print(f"  Including network overhead:   {total_time / 10:.2f} ms")
@@ -298,7 +298,7 @@ def main():
     successful_flips = [r for r in flip_results if r["num_adjustments"] > 0]
     adjustment_counts = [r["num_adjustments"] for r in successful_flips]
 
-    print(f"\n📊 Prediction Flip Statistics (n={len(successful_flips)}):")
+    print(f"\n Prediction Flip Statistics (n={len(successful_flips)}):")
     if adjustment_counts:
         print(f"  Mean adjustments needed:   {np.mean(adjustment_counts):.1f}")
         print(f"  Median adjustments:        {int(np.median(adjustment_counts))}")
@@ -313,7 +313,7 @@ def main():
         from collections import Counter
 
         feature_counts = Counter(all_adjusted)
-        print(f"\n  Most impactful features for flipping predictions:")
+        print("\n Most impactful features for flipping predictions:")
         for feature, count in feature_counts.most_common(5):
             print(
                 f"    {feature}: adjusted in {count}/{len(successful_flips)} cases ({100 * count / len(successful_flips):.0f}%)"

@@ -8,8 +8,6 @@
 (function () {
     'use strict';
 
-    // ==================== UTILITY FUNCTIONS ====================
-
     /**
      * Toast Notification System
      * Displays user-friendly notifications instead of alerts
@@ -104,8 +102,6 @@
         }
     };
 
-    // ==================== MAIN APPLICATION ====================
-
     document.addEventListener('DOMContentLoaded', function () {
         const ctx = document.getElementById('predictionChart').getContext('2d');
         const portInput = document.getElementById('Dst Port');
@@ -114,7 +110,6 @@
         /**
          * Chart.js Initialization
          * Configures the bar chart for displaying prediction probabilities.
-         * Uses a fixed set of labels corresponding to the model's classes.
          */
         let predictionChart = new Chart(ctx, {
             type: 'bar',
@@ -391,9 +386,6 @@
             }
         });
 
-        // Predict Function
-        // predictBtn.addEventListener('click', predict);
-
         // Auto-predict on input change (with debouncing)
         let predictionTimeout;
         const autoPredictDelay = 500; // ms
@@ -468,7 +460,6 @@
                         return;
                     }
 
-                    // Update Prediction Text with color-coding
                     const predictionEl = document.getElementById('prediction-text');
                     predictionEl.textContent = data.prediction;
 
@@ -517,8 +508,6 @@
         }
 
         function updateChart(probabilities) {
-            // probabilities is a list of {class: '...', probability: ...}
-            // We need to map this to the chart labels order
             const labels = predictionChart.data.labels;
             const chartData = labels.map(label => {
                 const item = probabilities.find(d => d.class === label);

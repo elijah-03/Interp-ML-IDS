@@ -14,7 +14,7 @@ from src.config import MODEL_PATH, SCALER_PATH, LE_PATH, FEATURE_LIST_PATH
 # Configuration
 DATASET_DIR = "/home/elijah/Documents/CPS373/Interp-ML-IDS/CSECICIDS2018_improved"
 BATCH_SIZE = 100000  # Process 100k rows at a time
-SAMPLE_FRACTION = 0.20  # Evaluate on 20% of the data (much higher than 1%)
+SAMPLE_FRACTION = 0.20  # Evaluate on 20% of the data
 
 
 def load_artifacts():
@@ -71,8 +71,7 @@ def preprocess_batch(df, scaler, le, feature_list):
 
         # 2. Label Encoding (Transform only)
         # Handle unseen labels by mapping to Benign (0) or skipping
-        # For safety, we map unseen to Benign (index 0 usually, but let's check)
-        # Actually, let's filter out unseen labels to be safe, or print warning
+        # For safety, we map unseen to Benign (index 0 usually, but check anyways)
         mask = df["Label"].isin(le.classes_)
         if not mask.all():
             # print(f"Warning: Dropping { (~mask).sum() } rows with unseen labels")
@@ -104,9 +103,6 @@ def preprocess_batch(df, scaler, le, feature_list):
         df = df.rename(columns=column_renames)
 
         # Ensure all expected features exist (fill 0 if missing)
-        # Note: feature_list contains the names of features expected by the model (after engineering?)
-        # Wait, feature_list from train_model.py is X.columns.tolist() AFTER engineering.
-        # So we need to engineer first, then select.
 
         # Base features needed for engineering
         base_features = [
@@ -195,11 +191,7 @@ def evaluate():
 
         # Read file in chunks
         try:
-            # First, estimate rows to skip for sampling if we want to be fancy,
-            # but for simplicity with pandas chunksize, we'll read everything and sample in memory
-            # OR read random chunks.
-            # Given we want 20%, reading everything then sampling 20% might still be heavy if file is 4GB.
-            # Better: Read in chunks, sample 20% of each chunk, then process.
+            # Read file in chunks
 
             chunk_iterator = pd.read_csv(
                 file_path,

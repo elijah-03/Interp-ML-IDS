@@ -11,7 +11,7 @@ from sklearn.utils.class_weight import compute_sample_weight
 from imblearn.over_sampling import SMOTE
 import time
 import gc
-import pandas as pd
+# import pandas as pd
 
 # Import the functions from your scripts
 try:
@@ -30,7 +30,7 @@ from src.config import MODEL_PATH, SCALER_PATH, LE_PATH, FEATURE_LIST_PATH
 
 # Define memory limit function
 def set_memory_limit(max_gb=28):
-    """Set a hard memory limit to prevent system crashes (leave 4GB for OS)"""
+    """Set a hard memory limit to prevent system crashes"""
     try:
         max_bytes = int(max_gb * 1024 * 1024 * 1024)
         resource.setrlimit(resource.RLIMIT_AS, (max_bytes, max_bytes))
@@ -40,15 +40,15 @@ def set_memory_limit(max_gb=28):
 
 
 # Call immediately
-set_memory_limit(28)  # Leave 4GB for system
+set_memory_limit(28)
 
 # Configuration
 RANDOM_STATE = 42
-SAMPLE_FRACTION = 0.15  # Keep 15% as before
+SAMPLE_FRACTION = 0.15
 
 
 def optimize_dtypes(df):
-    """Downcast numeric types to save 50%+ memory"""
+    """Downcast numeric types to save memory"""
     for col in df.select_dtypes(include=["float64"]).columns:
         df[col] = df[col].astype("float32")
     for col in df.select_dtypes(include=["int64"]).columns:
@@ -98,7 +98,7 @@ def chunked_smote(
 
         current_count = class_counts.get(cls_idx, 0)
 
-        # Special handling for Web Attack (too few samples)
+        # Special handling for Web Attack
         if cls_name == "Web Attack":
             target = min(10000, current_count * 50)  # Cap at 10K
         else:
@@ -159,7 +159,7 @@ def chunked_smote(
             # No oversampling needed
             X_resampled_list.append(X_class)
             y_resampled_list.append(y_class)
-            print(f"  ✓ No oversampling needed")
+            print("No oversampling needed")
 
         # Aggressive garbage collection after each class
         del X_class, y_class
@@ -174,7 +174,7 @@ def chunked_smote(
     del X_resampled_list, y_resampled_list
     gc.collect()
 
-    print(f"\n✓ Final dataset: {X_train_resampled.shape}")
+    print(f"\nFinal dataset: {X_train_resampled.shape}")
     print("\nFinal class distribution:")
     unique, counts = np.unique(y_train_resampled, return_counts=True)
     for cls, count in zip(unique, counts):
@@ -191,7 +191,9 @@ def train_models():
     """
 
     # 1. Define data path
-    DATASET_DIR = "/home/elijah/Documents/CPS373/Interp-ML-IDS/CSECICIDS2018_improved"
+    DATASET_DIR = os.path.join(
+        os.path.dirname(__file__), "..", "CSECICIDS2018_improved"
+    )
 
     try:
         # 2. Load Data
@@ -202,7 +204,7 @@ def train_models():
             print("Failed to load data.")
             return
 
-        # OPTIMIZATION: Downcast types immediately
+        # Downcast types immediately
         print("Optimizing memory (downcasting types)...")
         raw_df = optimize_dtypes(raw_df)
 

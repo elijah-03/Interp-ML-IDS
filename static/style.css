@@ -34,13 +34,9 @@ body {
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;
-    /* Center the container */
     display: grid;
     grid-template-columns: 1fr 100px;
-    /* grid-template-columns: 100%; */
-    /* Stack vertically */
     grid-template-rows: auto auto 1fr;
-    /* Header, Visualization, Controls */
     gap: 0.5rem;
     min-height: 95vh;
     align-items: start;
@@ -48,7 +44,6 @@ body {
 
 .container>* {
     min-width: 0;
-    /* Prevent grid blowout */
 }
 
 header {
@@ -64,36 +59,25 @@ header h1 {
 
 /* Controls Section */
 .controls-panel {
-    /* order: 2; Removed to respect HTML order (Visualization first? No, HTML has Controls first) */
-    /* Wait, HTML has Controls first. If we want Visualization on top, we need order. */
     order: 2;
-    /* Keep Controls below Visualization */
     background: var(--card-bg);
     backdrop-filter: blur(12px);
     border: var(--glass-border);
     border-radius: 16px;
     padding: 0.75rem;
-    /* Reduced padding */
-    display: grid;
-    grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
-    /* Reduced gap */
     align-content: start;
     width: 100%;
-    /* Enforce full width */
     grid-column: 1;
 }
 
 .controls-panel h3 {
     grid-column: 1 / -1;
     font-size: 0.95rem;
-    /* Slightly smaller */
     margin-bottom: 0.25rem;
-    /* Reduced margin */
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding-bottom: 0.25rem;
     margin-top: 0.25rem;
-    /* Reduced margin */
 }
 
 .control-group {

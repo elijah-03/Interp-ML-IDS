@@ -50,8 +50,7 @@ try:
         except Exception:
             pass  # Model may not support these params
 
-    # WORKAROUND: Fix XGBoost 3.1.2 base_score array format for SHAP compatibility
-    # XGBoost 3.x returns base_score as an array, but SHAP expects a float
+    # Fix XGBoost 3.1.2 base_score array format for SHAP compatibility
     if hasattr(model, "get_booster"):
         try:
             booster = model.get_booster()
@@ -85,7 +84,7 @@ try:
             print(f"⚠ Could not patch base_score: {patch_error}")
 
     # Create SHAP explainer
-    # Using the scaler's mean as a simple background (single point for speed)
+    # Using the scaler's mean as a background dataset
     background = pd.DataFrame([scaler.mean_], columns=feature_list)
     explainer = shap.TreeExplainer(model, background)
     print("✓ Model loaded successfully")
@@ -102,8 +101,7 @@ except Exception as e:
     feature_list = []
     explainer = None
 
-# Surrogate model removed - we now always use SHAP-based local rules
-# SHAP val are already computed for every prediction, so there's no performance penalty
+# Surrogate model removed - using SHAP-based local rules
 
 
 @app.route("/")
@@ -121,7 +119,6 @@ def index() -> str:
 def engineer_features_for_prediction(df: pd.DataFrame) -> pd.DataFrame:
     """
     Auto-calculate derived features from base features for prediction.
-    Keeps UI simple - users only adjust base features, derived features calculated automatically.
 
     Args:
         df: DataFrame with base features
@@ -537,11 +534,6 @@ def predict():
         df = df[feature_list]
         features = df.values  # Keep features as numpy array for other calculations
 
-        # Debug print (commented out to avoid interfering with JSON response)
-        # print("\n--- Received Features ---")
-        # for i, feature in enumerate(feature_list):
-        #     print(f"{feature}: {features[0][i]}")
-
         # Scale features using the DataFrame to preserve feature names
         features_scaled = scaler.transform(df)
 
@@ -552,11 +544,10 @@ def predict():
         predicted_class_idx = prediction[0]
         predicted_class = le.inverse_transform([predicted_class_idx])[0]
 
-        # Calculate Z-scores for context (still useful for description)
-        # z = (x - mean) / scale
+        # Calculate Z-scores for context
         z_scores = (features[0] - scaler.mean_) / scaler.scale_
 
-        # Calculate SHAP values (Moved up for Insights)
+        # Calculate SHAP values
         shap_values = explainer.shap_values(features_scaled)
 
         # Robustly handle SHAP output structure
@@ -568,8 +559,7 @@ def predict():
             if predicted_class_idx < len(shap_values):
                 shap_values_for_class = shap_values[predicted_class_idx]
             else:
-                # Fallback: try the first one or last one?
-                # Usually len(shap_values) == n_classes
+                # Fallback to last class if index out of range
                 shap_values_for_class = shap_values[-1]
 
         # Case 2: Single array (binary or specific output format)
@@ -604,7 +594,6 @@ def predict():
             confidence_level = "Low"
 
         # Find top 3 features with highest ABSOLUTE SHAP contribution
-        # This ensures Insights match the SHAP plot
         top_indices = np.argsort(np.abs(sample_shap))[::-1][:3]
 
         insights = []
@@ -624,9 +613,7 @@ def predict():
             # Format the value readably
             readable_value = format_value(feature_name, feature_value)
 
-            # Determine magnitude descriptor based on Z-score (for context)
-            # But use SHAP for "High/Low" impact direction if needed,
-            # though usually we describe the *value* being high/low.
+            # Determine magnitude descriptor based on Z-score
             abs_z = abs(z_val)
             if abs_z > 2.5:
                 magnitude = "Very high" if z_val > 0 else "Very low"
@@ -707,8 +694,7 @@ def predict():
         sensitivity_analysis = []
         counterfactuals = []
 
-        # Identify top drivers using SHAP (more accurate than Z-score)
-        # Get indices of features with highest positive contribution
+        # Identify top drivers using SHAP
         top_shap_indices = np.argsort(sample_shap)[::-1]
 
         # For attack predictions: find what would make it benign
@@ -720,12 +706,11 @@ def predict():
             for idx in top_shap_indices:
                 feature_name = feature_list[idx]
 
-                # STRICT FILTER: Only allow base features that the user can modify
+                # Filter: Only allow base features that the user can modify
                 if feature_name not in base_feature_list:
                     continue
 
-                # We now check ALL top features, not just positive contributors,
-                # because increasing a low-value feature might also break the attack pattern.
+                # Check all top features, not just positive contributors
                 top_features_indices.append(idx)
 
                 # Stop once we have 8 valid base features to test
@@ -751,14 +736,13 @@ def predict():
                 test_values.append(0)
                 test_values.append(scaler.mean_[idx])
 
-                # Increases (Multipliers) - NEW
+                # Increases (Multipliers)
                 # Only if current value is small enough that increasing it makes sense
                 if current_value < 1000000:  # Avoid overflowing massive values
                     for mult in [1.5, 2.0, 3.0, 5.0, 10.0]:
                         test_values.append(current_value * mult)
 
-                # Increases (Absolute high values) - NEW
-                # Try setting to a "high" value based on mean (e.g., 5x mean)
+                # Increases (Absolute high values)
                 test_values.append(scaler.mean_[idx] * 5)
 
                 # Sort unique test values
@@ -934,8 +918,8 @@ def predict():
         )
 
         # Log input with port mapping
-        dst_port = int(input_data.get("Dst Port", 0))
-        port_str = PORT_MAP.get(dst_port, str(dst_port))
+        # dst_port = int(input_data.get("Dst Port", 0))
+        # port_str = PORT_MAP.get(dst_port, str(dst_port))
         # Debug output commented to prevent JSON parsing errors
         # print(f"Input Features (first 5): {df.iloc[0].head().to_dict()}")
         # print(f"Dst Port: {port_str}")
@@ -1085,7 +1069,7 @@ def analyze_feature():
         # Determine range for the target feature
         # We need reasonable min/max values.
         # If it's a flag, 0-1. If it's a port, 0-65535.
-        # For continuous vars, we can use 0 to 2x current value, or a fixed large range.
+        # Use the class predicted at the current value, or a fixed large range.
 
         min_val = 0
         max_val = 0
@@ -1136,16 +1120,6 @@ def analyze_feature():
         # 2. Generate Predictions
         y_values = []
 
-        # We need to know which class we are tracking probability for.
-        # Usually the class predicted by the current_features.
-        # Let's get the baseline prediction first.
-
-        # ... (Reuse prediction logic to get baseline class) ...
-        # Actually, let's just use the class predicted at the current value
-        # Or we can return probabilities for ALL classes? No, too much data.
-        # Let's return prob for the "Attack" class if it's an attack, or "Benign" if it's benign.
-        # Better: Return prob for the class that is currently predicted.
-
         # Get baseline prediction
         df_base = pd.DataFrame([input_data])
         df_base = engineer_features_for_prediction(df_base)
@@ -1163,7 +1137,7 @@ def analyze_feature():
             # Create DataFrame
             df = pd.DataFrame([temp_input])
 
-            # Engineer features (CRITICAL: Derived features must update based on new val)
+            # Engineer features (Derived features must update based on new val)
             df = engineer_features_for_prediction(df)
 
             # Select and Scale
@@ -1174,10 +1148,6 @@ def analyze_feature():
             probs = model.predict_proba(features_scaled)[0]
 
             # Get probability of the BASE predicted class
-            # This shows "How stable is this prediction?"
-            # OR we could track "Probability of Attack" (sum of all non-benign)
-
-            # Let's track the probability of the class that was originally predicted
             prob = probs[predicted_class_idx]
             y_values.append(float(prob))
 

@@ -2,9 +2,9 @@
 
 ## Summary
 
-This 2022 research paper addresses **the exact same class imbalance problem** we're facing with CICIDS2018 dataset. 
+This 2022 research paper addresses the class imbalance problem inherent in the CICIDS2018 dataset.
 
-## Their Approach to Class Imbalance
+## Approach to Class Imbalance
 
 ### Data Preprocessing Strategy
 
@@ -13,14 +13,14 @@ This 2022 research paper addresses **the exact same class imbalance problem** we
 - 84 features (reduced to 76 after removing redundant ones)
 - Severe class imbalance
 
-**Their Solution**: **Upsampling + Downsampling**
+**Solution**: **Upsampling + Downsampling**
 - **Upsampling**: Increased samples for minority attack classes
 - **Downsampling**: Reduced Benign class from millions to 1,000,000
 - **Final balanced dataset**: 3,835,577 rows (76% reduction)
 
-**Key Insight**: They achieved 98.31% accuracy with LESS data by balancing classes!
+**Key Insight**: The paper achieved 98.31% accuracy with a reduced dataset size by balancing classes.
 
-## Their Results
+## Results
 
 ### CNN Model Performance
 - **Accuracy**: 98.31%
@@ -30,67 +30,67 @@ This 2022 research paper addresses **the exact same class imbalance problem** we
 ### LSTM Model Performance  
 - **Accuracy**: 98.15%
 - **Loss**: 0.0403 (better than CNN)
-- **Training Time**: 41.81 hours (6x slower!)
+- **Training Time**: 41.81 hours
 
 ### Per-Class Performance (Both Models)
 
-**Key Finding**: Both models achieved **1.00 (100%) precision and recall** for most attack classes after balancing!
+**Key Finding**: Both models achieved **1.00 (100%) precision and recall** for most attack classes after balancing.
 
-**Web Attack Performance**: Not explicitly shown in tables, but the paper states "high detection rate for most attack types"
+**Web Attack Performance**: The paper states a "high detection rate for most attack types," implying successful classification of Web Attacks.
 
-## What This Tells Us
+## Analysis of Findings
 
-### 1. **Our Downsampling Was Wrong**
+### 1. Comparison of Downsampling Strategies
 
-**We did**:
+**Current Project Approach**:
 - Kept 5.7M Benign samples
 - Only upsampled attacks to 100K-200K each
-- Result: Still massively imbalanced (5.7M vs 200K)
+- Result: Imbalanced ratio (5.7M vs 200K)
 
-**They did**:
+**Paper's Approach**:
 - Downsampled Benign to 1M
 - Upsampled attacks to balance
-- Result: Much more balanced dataset
+- Result: Balanced dataset
 
-### 2. **More Data ≠ Better Performance**
+### 2. Data Volume vs. Performance
 
 - Original: 16.2M samples → Various accuracy issues
 - Balanced: 3.8M samples (76% less) → 98.31% accuracy
-- **Lesson**: Class balance matters more than total volume
+- **Lesson**: Class balance is a critical factor for performance.
 
-### 3. **Our Training Time Was Too Fast**
+### 3. Training Time Considerations
 
-**Our model**: 
+**Current Model**: 
 - 25 seconds with 6.4M samples (after SMOTE)
 - Sample: 15% of dataset
 
-**Their model**:
+**Paper's Model**:
 - 6.8 hours with 3.8M samples
 - Sample: 23% of dataset  
 
-**Implication**: We might need more epochs or slower learning rate
+**Implication**: More epochs or a slower learning rate may be beneficial.
 
-### 4. **Web Attack Can Be Detected**
+### 4. Feasibility of Web Attack Detection
 
-The paper successfully classified Web Attacks with CNN/LSTM on the SAME dataset we're using. This proves it's possible!
+The paper successfully classified Web Attacks with CNN/LSTM on the CICIDS2018 dataset, demonstrating that detection is possible with appropriate preprocessing.
 
-## Recommended Changes Based on This Paper
+## Recommended Changes
 
 ### Critical Fix: Aggressive Benign Downsampling
 
 ```python
-# Current approach (WRONG):
+# Current approach:
 Benign: 5,727,533 samples (unchanged)
 Attacks: 100K-200K each (SMOTE)
-Ratio: 5.7M:200K = 28.5:1 (still imbalanced!)
+Ratio: 5.7M:200K = 28.5:1 (imbalanced)
 
-# Paper's approach (CORRECT):
+# Paper's approach:
 Benign: 1,000,000 samples (downsample to 1M)
 Attacks: 100K-200K each (SMOTE)
-Ratio: 1M:200K = 5:1 (much better!)
+Ratio: 1M:200K = 5:1 (balanced)
 ```
 
-### Implementation
+### Implementation Strategy
 
 **Option 1: Balanced Downsampling**
 ```python
@@ -98,7 +98,7 @@ Ratio: 1M:200K = 5:1 (much better!)
 # 1. Downsample Benign BEFORE train/test split
 benign_mask = y_train == 0
 benign_indices = np.where(benign_mask)[0]
-downsample_to = 1_000_000  # Like the paper
+downsample_to = 1_000_000  # Target count
 
 benign_sampled = np.random.choice(
     benign_indices, 
@@ -130,44 +130,43 @@ smote = SMOTE(sampling_strategy=sampling_strategy)
 ### Expected Results
 
 Based on the paper's findings:
-- **Overall Accuracy**: 98-99% (vs. our current 99.62%)
-- **Web Attack F1**: Should improve significantly (paper shows high performance)
-- **Training Time**: Expect 30min-1hour (vs. our 25 seconds)
-- **All Classes**: More balanced precision/recall across all attack types
+- **Overall Accuracy**: 98-99%
+- **Web Attack F1**: Significant improvement expected
+- **Training Time**: Increase to 30min-1hour
+- **All Classes**: More balanced precision/recall
 
-## Why Our Current Approach Failed for Web Attacks
+## Root Cause Analysis for Web Attacks
 
-**Our Issue**: 
+**Current Issue**: 
 - Benign: 5.7M samples
 - Web Attack (SMOTE): 10K samples
 - Ratio: 570:1
 
-**Result**: Model overwhelmingly predicts Benign because it's seen it 570x more often
+**Result**: Model predicts Benign due to extreme frequency difference.
 
-**Their Solution**:
+**Proposed Solution**:
 - Benign: 1M samples  
 - Web Attack (SMOTE): ~200K samples
 - Ratio: 5:1
 
-**Result**: Model treats Web Attack as a real class, not noise
+**Result**: Web Attack treated as a distinct class.
 
-## Next Steps
+## Proposed Next Steps
 
-1. **Downsample Benign to 1M** (like the paper)
+1. **Downsample Benign to 1M**
 2. **Increase SMOTE targets**:
    - Bot: 100K → 200K
    - Web Attack-SQL: 5K → 200K
    - Web Attack-XSS: 5K → 200K
    - Others: 150K-200K each
+3. **Increase training epochs** to 300-500
+4. **Increase sample fraction** to 25-30%
+5. **Anticipate longer training time**
 
-3. **Increase training epochs** from 200 to 300-500
-4. **Increase sample fraction** from 15% to 25-30%
-5. **Expect longer training time** (20-60 minutes instead of 25 seconds)
-
-## Why This Will Work
+## Justification
 
 **Proven on same dataset** (CICIDS2018)  
 **Addresses root cause** (class imbalance)  
 **Achieves 98%+ accuracy** in published research  
 **Successfully detects Web Attacks**  
-**Less than 6 months ago** (July 2022 - recent)
+**Recent Research** (July 2022)

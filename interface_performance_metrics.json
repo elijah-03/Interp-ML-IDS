@@ -1,0 +1,209 @@
+{
+  "response_times": [
+    124.44853782653809,
+    101.84526443481445,
+    102.90789604187012,
+    101.7296314239502,
+    105.25894165039062,
+    115.23962020874023,
+    106.94122314453125,
+    109.2531681060791,
+    116.71328544616699,
+    164.47687149047852,
+    102.10156440734863,
+    102.42152214050293,
+    101.88603401184082,
+    104.11405563354492,
+    109.97700691223145,
+    101.63402557373047,
+    99.61318969726562,
+    103.65056991577148,
+    104.5079231262207,
+    98.88267517089844,
+    104.16698455810547,
+    99.01905059814453,
+    102.87714004516602,
+    98.52433204650879,
+    102.37741470336914,
+    120.22638320922852,
+    93.38092803955078,
+    98.4048843383789,
+    166.7032241821289,
+    94.15888786315918,
+    96.65346145629883,
+    101.07588768005371,
+    99.53689575195312,
+    104.98714447021484,
+    99.63297843933105,
+    121.52338027954102,
+    108.07180404663086,
+    102.02431678771973,
+    98.51384162902832,
+    120.25904655456543,
+    107.59925842285156,
+    108.36553573608398,
+    100.62885284423828,
+    103.08957099914551,
+    100.85940361022949,
+    114.39180374145508,
+    104.69341278076172,
+    163.76876831054688,
+    93.50466728210449,
+    94.07424926757812
+  ],
+  "what_if_analysis": {
+    "total_time_ms": 1093.3680534362793,
+    "request_times_ms": [
+      102.05888748168945,
+      105.3459644317627,
+      104.81476783752441,
+      113.11960220336914,
+      144.68002319335938,
+      105.45182228088379,
+      103.49678993225098,
+      105.13734817504883,
+      105.90314865112305,
+      103.26313972473145
+    ],
+    "feature_tested": "Flow Duration"
+  },
+  "flip_tests": [
+    {
+      "attack_type": "DoS",
+      "num_adjustments": 0,
+      "features_adjusted": []
+    },
+    {
+      "attack_type": "DDoS",
+      "num_adjustments": 0,
+      "features_adjusted": []
+    },
+    {
+      "attack_type": "Brute Force",
+      "num_adjustments": 4,
+      "features_adjusted": [
+        "Flow Duration",
+        "Total Fwd Packets",
+        "SYN Flag Count",
+        "Dst Port"
+      ]
+    },
+    {
+      "attack_type": "DoS",
+      "num_adjustments": 0,
+      "features_adjusted": []
+    },
+    {
+      "attack_type": "DDoS",
+      "num_adjustments": 0,
+      "features_adjusted": []
+    },
+    {
+      "attack_type": "Brute Force",
+      "num_adjustments": 4,
+      "features_adjusted": [
+        "Flow Duration",
+        "Total Fwd Packets",
+        "SYN Flag Count",
+        "Dst Port"
+      ]
+    },
+    {
+      "attack_type": "DoS",
+      "num_adjustments": 0,
+      "features_adjusted": []
+    },
+    {
+      "attack_type": "DDoS",
+      "num_adjustments": 0,
+      "features_adjusted": []
+    },
+    {
+      "attack_type": "Brute Force",
+      "num_adjustments": 4,
+      "features_adjusted": [
+        "Flow Duration",
+        "Total Fwd Packets",
+        "SYN Flag Count",
+        "Dst Port"
+      ]
+    },
+    {
+      "attack_type": "DoS",
+      "num_adjustments": 0,
+      "features_adjusted": []
+    },
+    {
+      "attack_type": "DDoS",
+      "num_adjustments": 0,
+      "features_adjusted": []
+    },
+    {
+      "attack_type": "Brute Force",
+      "num_adjustments": 4,
+      "features_adjusted": [
+        "Flow Duration",
+        "Total Fwd Packets",
+        "SYN Flag Count",
+        "Dst Port"
+      ]
+    },
+    {
+      "attack_type": "DoS",
+      "num_adjustments": 0,
+      "features_adjusted": []
+    },
+    {
+      "attack_type": "DDoS",
+      "num_adjustments": 0,
+      "features_adjusted": []
+    },
+    {
+      "attack_type": "Brute Force",
+      "num_adjustments": 4,
+      "features_adjusted": [
+        "Flow Duration",
+        "Total Fwd Packets",
+        "SYN Flag Count",
+        "Dst Port"
+      ]
+    },
+    {
+      "attack_type": "DoS",
+      "num_adjustments": 0,
+      "features_adjusted": []
+    },
+    {
+      "attack_type": "DDoS",
+      "num_adjustments": 0,
+      "features_adjusted": []
+    },
+    {
+      "attack_type": "Brute Force",
+      "num_adjustments": 4,
+      "features_adjusted": [
+        "Flow Duration",
+        "Total Fwd Packets",
+        "SYN Flag Count",
+        "Dst Port"
+      ]
+    },
+    {
+      "attack_type": "DoS",
+      "num_adjustments": 0,
+      "features_adjusted": []
+    },
+    {
+      "attack_type": "DDoS",
+      "num_adjustments": 0,
+      "features_adjusted": []
+    }
+  ],
+  "summary_statistics": {
+    "mean_response_time_ms": 108.01393032073975,
+    "median_response_time_ms": 102.89251804351807,
+    "p95_response_time_ms": 146.0746645927428,
+    "mean_adjustments_to_flip": 4.0,
+    "median_adjustments_to_flip": 4.0
+  }
+}

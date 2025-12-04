@@ -1,6 +1,5 @@
 """
 IDS Control Panel - Configuration Constants
-Centralizes magic numbers and configuration values for easier maintenance
 """
 
 from typing import Dict
@@ -78,27 +77,26 @@ FEATURE_DISPLAY_NAMES: Dict[str, str] = {
 class ZScoreThresholds:
     """Thresholds for categorizing Z-scores"""
 
-    VERY_HIGH = 2.5  # abs(z) > 2.5: Very high/low
-    HIGH = 1.5  # abs(z) > 1.5: High/low
-    SIGNIFICANT = 1.0  # abs(z) > 1.0: Significant enough to display
+    VERY_HIGH = 2.5
+    HIGH = 1.5
+    SIGNIFICANT = 1.0
 
 
 # ==================== CONFIDENCE THRESHOLDS ====================
 class ConfidenceThresholds:
     """Thresholds for confidence level categorization"""
 
-    HIGH = 0.75  # > 75%: High confidence
-    MEDIUM = 0.50  # 50-75%: Medium confidence
-    # < 50%: Low confidence
+    HIGH = 0.75  # > 75%
+    MEDIUM = 0.50  # 50-75%
 
 
 # ==================== SHAP THRESHOLDS ====================
 class ShapThresholds:
     """Thresholds for SHAP contribution significance"""
 
-    HIGH_CONTRIBUTION = 0.5  # abs(shap) > 0.5: High contribution
-    MEDIUM_CONTRIBUTION = 0.1  # abs(shap) > 0.1: Medium contribution
-    MIN_DISPLAY = 0.01  # abs(shap) > 0.01: Minimum to display
+    HIGH_CONTRIBUTION = 0.5
+    MEDIUM_CONTRIBUTION = 0.1
+    MIN_DISPLAY = 0.01
 
     # Number of features to show in local rules
     TOP_FEATURES_COUNT = 5

@@ -20,7 +20,7 @@ import shap
 import matplotlib
 
 # Local config import
-from config import (
+from src.config import (
     MODEL_PATH,
     SCALER_PATH,
     LE_PATH,

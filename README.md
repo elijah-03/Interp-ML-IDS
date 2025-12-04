@@ -94,20 +94,25 @@ A comprehensive research report detailing the methodology, system design, and ev
 
 ## File Structure
 
--   `app.py`: Main Flask application backend. Handles predictions and interpretability logic.
--   `train_model.py`: Memory-optimized script to train the XGBoost model and save artifacts.
--   `evaluate_model.py`: Script for batch evaluation of the model.
--   `evaluate_rules.py`: Script to evaluate the rule-based surrogate system.
--   `generate_report_visuals.py`: Script to generate plots for the report.
--   `generate_paper_figures.py`: Script to generate high-quality figures for the LaTeX paper.
--   `preprocess.py`: Data cleaning, feature selection, and preprocessing logic.
--   `load_dataset.py`: Utility to load and sample the CSE-CIC-IDS2018 dataset.
--   `static/`: CSS styles and JavaScript logic for the frontend.
--   `templates/`: HTML templates for the web interface.
+-   `app.py`: Main Flask application backend (Entry point).
+-   `src/`: Core application modules.
+    -   `config.py`: Configuration and path definitions.
+    -   `preprocess.py`: Data cleaning and feature engineering logic.
+    -   `load_dataset.py`: Dataset loading utilities.
+-   `scripts/`: Executable scripts for training and evaluation.
+    -   `train_model.py`: Memory-optimized training script.
+    -   `evaluate_model.py`: Batch evaluation script.
+    -   `evaluate_rules.py`: Rule-based system evaluation.
+    -   `generate_report_visuals.py`: Generates data plots for the report.
+    -   `generate_paper_figures.py`: Generates schematic figures for the paper.
+    -   `measure_interface_performance.py`: Benchmarks dashboard performance.
+-   `models/`: Serialized model artifacts (`.joblib`).
+-   `references/`: Reference research papers (PDFs).
+-   `static/`: CSS styles and JavaScript logic.
+-   `templates/`: HTML templates.
 -   `docs/`: Documentation and research reports.
     -   `BridgeIDS_Report.md`: Full project report.
-    -   `Latex/`: LaTeX source code and figures for the PDF report.
--   `*.joblib`: Serialized model and preprocessing artifacts.
+    -   `Latex/`: LaTeX source code and figures.
 
 ## Dataset
 

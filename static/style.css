@@ -32,12 +32,12 @@ body {
 
 .container {
     width: 100%;
-    max-width: 600px;
+    max-width: 1200px;
     margin: 0 auto;
     /* Center the container */
     display: grid;
-    /* grid-template-columns: 1fr 350px; */
-    grid-template-columns: 100%;
+    grid-template-columns: 1fr 100px;
+    /* grid-template-columns: 100%; */
     /* Stack vertically */
     grid-template-rows: auto auto 1fr;
     /* Header, Visualization, Controls */
@@ -81,6 +81,7 @@ header h1 {
     align-content: start;
     width: 100%;
     /* Enforce full width */
+    grid-column: 1;
 }
 
 .controls-panel h3 {
@@ -137,9 +138,10 @@ header h1 {
 
 .value-input {
     display: block;
-    width: 100%;
-    min-width: 70px;
-    max-width: 95px;
+    width: auto;
+    flex-shrink: 0;
+    min-width: 80px;
+    max-width: 120px;
     margin-top: 0.5rem;
     background: rgba(15, 23, 42, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -270,6 +272,7 @@ button#predict-btn:active {
     flex-direction: column;
     width: 100%;
     /* Enforce full width */
+    grid-column: 2;
 }
 
 .visualization h2 {
@@ -630,14 +633,15 @@ label[title] {
 
 .input-with-action input[type="range"] {
     flex-grow: 1;
-    min-width: 60px;
+    flex-shrink: 1;
+    min-width: 40px;
 }
 
 .input-with-action input[type="number"],
 .input-with-action select {
     flex-shrink: 0;
-    min-width: 70px;
-    max-width: 95px;
+    min-width: 80px;
+    max-width: 120px;
 }
 
 .analyze-btn {

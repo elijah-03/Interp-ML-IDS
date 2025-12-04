@@ -13,12 +13,13 @@ A comprehensive research report detailing the methodology, system design, and ev
 
 ### High-Performance Detection
 -   **Model**: XGBoost Classifier with Histogram-based optimization.
--   **Accuracy**: **97.66%** (Evaluated on 12.6 million samples).
+-   **Accuracy**: **99.96%** (Evaluated on 12.6 million samples).
 -   **Classes**: Benign, DoS, DDoS, Brute Force, Web Attack, Bot/Infiltration.
 
 ### Interactive Interpretability
 -   **"What-If" Analysis**: Adjust feature values (e.g., ports, flow duration) in real-time to see how the prediction changes.
 -   **Key Drivers**: Identifies the top features contributing to the prediction using Z-score analysis and SHAP concepts.
+-   **Visual Explanations**: Generates SHAP waterfall plots to visualize positive and negative feature contributions.
 -   **Pattern Detection**: Maps feature combinations to known attack patterns (e.g., "Slowloris-style attack", "SQL Injection").
 -   **Safety Prescriptions**: Suggests counterfactuals (minimal changes) to reclassify traffic as benign.
 
@@ -53,7 +54,7 @@ A comprehensive research report detailing the methodology, system design, and ev
     ```bash
     python train_model.py
     ```
-    This script loads the dataset, preprocesses it (using Benign Downsampling + SMOTE), trains the XGBoost model, and saves the artifacts (`xgb_model.joblib`, `scaler.joblib`, etc.).
+    This script loads the dataset, preprocesses it (using Benign Downsampling + SMOTE), trains the XGBoost model, and saves the artifacts (`xgb_model.joblib`, `scaler.joblib`, etc.). It uses a **memory-safe "Chunked SMOTE"** approach to prevent system crashes on consumer hardware.
 
 2.  **Evaluate the Model**:
     ```bash
@@ -73,6 +74,12 @@ A comprehensive research report detailing the methodology, system design, and ev
     ```
     Generates static plots (confusion matrices, feature importance) for the research report.
 
+5.  **Generate Paper Figures**:
+    ```bash
+    python generate_paper_figures.py
+    ```
+    Generates publication-quality figures (System Architecture, SHAP Waterfall) for the LaTeX report.
+
 5.  **Run the Web Interface**:
     ```bash
     flask run
@@ -88,10 +95,11 @@ A comprehensive research report detailing the methodology, system design, and ev
 ## File Structure
 
 -   `app.py`: Main Flask application backend. Handles predictions and interpretability logic.
--   `train_model.py`: Script to train the XGBoost model and save artifacts.
+-   `train_model.py`: Memory-optimized script to train the XGBoost model and save artifacts.
 -   `evaluate_model.py`: Script for batch evaluation of the model.
 -   `evaluate_rules.py`: Script to evaluate the rule-based surrogate system.
 -   `generate_report_visuals.py`: Script to generate plots for the report.
+-   `generate_paper_figures.py`: Script to generate high-quality figures for the LaTeX paper.
 -   `preprocess.py`: Data cleaning, feature selection, and preprocessing logic.
 -   `load_dataset.py`: Utility to load and sample the CSE-CIC-IDS2018 dataset.
 -   `static/`: CSS styles and JavaScript logic for the frontend.

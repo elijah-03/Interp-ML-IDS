@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
+
 import joblib
 import os
 
@@ -35,10 +35,10 @@ def plot_class_distribution():
     width = 0.35
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    rects1 = ax.bar(
+    ax.bar(
         x - width / 2, original, width, label="Original (Log Scale)", color="#4c72b0"
     )
-    rects2 = ax.bar(
+    ax.bar(
         x + width / 2, balanced, width, label="Training Set (Balanced)", color="#55a868"
     )
 

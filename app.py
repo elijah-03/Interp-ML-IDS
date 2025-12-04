@@ -50,8 +50,41 @@ try:
         except Exception:
             pass  # Model may not support these params
 
+    # WORKAROUND: Fix XGBoost 3.1.2 base_score array format for SHAP compatibility
+    # XGBoost 3.x returns base_score as an array, but SHAP expects a float
+    if hasattr(model, "get_booster"):
+        try:
+            booster = model.get_booster()
+            config = booster.save_config()
+            import json
+
+            config_dict = json.loads(config)
+
+            # Check if base_score is in array format
+            base_score_str = (
+                config_dict.get("learner", {})
+                .get("learner_model_param", {})
+                .get("base_score", "0.5")
+            )
+            if base_score_str.startswith("["):
+                # It's an array, extract first value
+                base_score_array = json.loads(base_score_str)
+                base_score_value = float(base_score_array[0])
+
+                # Patch the config
+                config_dict["learner"]["learner_model_param"]["base_score"] = str(
+                    base_score_value
+                )
+
+                # Reload the booster with patched config
+                booster.load_config(json.dumps(config_dict))
+                print(
+                    f"✓ Patched base_score from array to {base_score_value:.4f} for SHAP compatibility"
+                )
+        except Exception as patch_error:
+            print(f"⚠ Could not patch base_score: {patch_error}")
+
     # Create SHAP explainer
-    # Use a representative background dataset for faster computation
     # Using the scaler's mean as a simple background (single point for speed)
     background = pd.DataFrame([scaler.mean_], columns=feature_list)
     explainer = shap.TreeExplainer(model, background)
@@ -60,6 +93,9 @@ try:
     print(f"✓ Classes: {list(le.classes_)}")
 except Exception as e:
     print(f"✗ Error loading model: {e}")
+    import traceback
+
+    traceback.print_exc()
     model = None
     scaler = None
     le = None
@@ -362,10 +398,16 @@ def format_value(feature_name: str, value: float) -> str:
             return f"{value:.3f}"
         else:
             return f"{value:.2f}"
+    elif "Is_" in feature_name:
+        # Boolean features
+        return "Yes" if value > 0.5 else "No"
     else:
         # Default formatting
         if value > 1000:
             return f"{value:,.1f}"
+        elif abs(value - round(value)) < 0.001 and value > 1:
+            # It's effectively an integer
+            return f"{int(value)}"
         elif value > 1:
             return f"{value:.2f}"
         else:
@@ -495,9 +537,10 @@ def predict():
         df = df[feature_list]
         features = df.values  # Keep features as numpy array for other calculations
 
-        print("\n--- Received Features ---")
-        for i, feature in enumerate(feature_list):
-            print(f"{feature}: {features[0][i]}")
+        # Debug print (commented out to avoid interfering with JSON response)
+        # print("\n--- Received Features ---")
+        # for i, feature in enumerate(feature_list):
+        #     print(f"{feature}: {features[0][i]}")
 
         # Scale features using the DataFrame to preserve feature names
         features_scaled = scaler.transform(df)
@@ -509,21 +552,70 @@ def predict():
         predicted_class_idx = prediction[0]
         predicted_class = le.inverse_transform([predicted_class_idx])[0]
 
-        # Calculate Z-scores for insights
+        # Calculate Z-scores for context (still useful for description)
         # z = (x - mean) / scale
         z_scores = (features[0] - scaler.mean_) / scaler.scale_
 
-        # Find top 3 features with highest absolute Z-scores
-        top_indices = np.argsort(np.abs(z_scores))[::-1][:3]
+        # Calculate SHAP values (Moved up for Insights)
+        shap_values = explainer.shap_values(features_scaled)
+
+        # Robustly handle SHAP output structure
+        shap_values_for_class = None
+
+        # Case 1: List of arrays (one per class) - standard for multi-class
+        if isinstance(shap_values, list):
+            # Check if predicted_class_idx is valid
+            if predicted_class_idx < len(shap_values):
+                shap_values_for_class = shap_values[predicted_class_idx]
+            else:
+                # Fallback: try the first one or last one?
+                # Usually len(shap_values) == n_classes
+                shap_values_for_class = shap_values[-1]
+
+        # Case 2: Single array (binary or specific output format)
+        elif isinstance(shap_values, np.ndarray):
+            # If 3D array (samples, features, classes), extract for class
+            if len(shap_values.shape) == 3:
+                shap_values_for_class = shap_values[:, :, predicted_class_idx]
+            # If 2D array (samples, features), use as is
+            else:
+                shap_values_for_class = shap_values
+
+        # Extract contributions for the single sample
+        # shap_values_for_class is now (n_samples, n_features) -> (1, 12)
+        if shap_values_for_class is not None and len(shap_values_for_class) > 0:
+            sample_shap = shap_values_for_class[0]
+        else:
+            # Fallback if something fails
+            sample_shap = np.zeros(len(feature_list))
+
+        # Create dictionary for frontend
+        shap_contributions = {
+            feature_list[i]: float(sample_shap[i]) for i in range(len(feature_list))
+        }
+
+        # Calculate confidence level based on top probability
+        max_prob = float(np.max(probs))
+        if max_prob > 0.95:
+            confidence_level = "High"
+        elif max_prob > 0.75:
+            confidence_level = "Medium"
+        else:
+            confidence_level = "Low"
+
+        # Find top 3 features with highest ABSOLUTE SHAP contribution
+        # This ensures Insights match the SHAP plot
+        top_indices = np.argsort(np.abs(sample_shap))[::-1][:3]
 
         insights = []
         for idx in top_indices:
             feature_name = feature_list[idx]
+            shap_val = sample_shap[idx]
             z_val = z_scores[idx]
             feature_value = features[0][idx]
 
-            # Skip if not significant
-            if abs(z_val) < 1.0:
+            # Skip if SHAP contribution is negligible
+            if abs(shap_val) < 0.01:
                 continue
 
             # Use full display name
@@ -532,7 +624,9 @@ def predict():
             # Format the value readably
             readable_value = format_value(feature_name, feature_value)
 
-            # Determine magnitude descriptor
+            # Determine magnitude descriptor based on Z-score (for context)
+            # But use SHAP for "High/Low" impact direction if needed,
+            # though usually we describe the *value* being high/low.
             abs_z = abs(z_val)
             if abs_z > 2.5:
                 magnitude = "Very high" if z_val > 0 else "Very low"
@@ -541,11 +635,19 @@ def predict():
             else:
                 magnitude = "Slightly high" if z_val > 0 else "Slightly low"
 
+            # If it's a boolean or categorical, magnitude might not make sense
+            if "Is_" in feature_name or feature_name == "Protocol":
+                magnitude = "Detected"
+
             # Create description: state the value + context
             description_parts = []
-            description_parts.append(
-                f"{magnitude} {display_name.lower()} ({readable_value})"
-            )
+
+            if "Is_" in feature_name:
+                description_parts.append(f"{display_name} is Present")
+            else:
+                description_parts.append(
+                    f"{magnitude} {display_name.lower()} ({readable_value})"
+                )
 
             # Add context based on feature and prediction
             context = ""
@@ -595,57 +697,11 @@ def predict():
                 {
                     "feature": feature_name,
                     "z_score": float(z_val),
+                    "shap_value": float(shap_val),
                     "direction": "High" if z_val > 0 else "Low",
                     "description": description,
                 }
             )
-
-        # Calculate confidence level based on top probability
-        max_prob = float(np.max(probs))
-        if max_prob > 0.95:
-            confidence_level = "High"
-        elif max_prob > 0.75:
-            confidence_level = "Medium"
-        else:
-            confidence_level = "Low"
-
-        # Calculate SHAP values (Moved up for Counterfactuals)
-        shap_values = explainer.shap_values(features_scaled)
-
-        # Robustly handle SHAP output structure
-        shap_values_for_class = None
-
-        # Case 1: List of arrays (one per class) - standard for multi-class
-        if isinstance(shap_values, list):
-            # Check if predicted_class_idx is valid
-            if predicted_class_idx < len(shap_values):
-                shap_values_for_class = shap_values[predicted_class_idx]
-            else:
-                # Fallback: try the first one or last one?
-                # Usually len(shap_values) == n_classes
-                shap_values_for_class = shap_values[-1]
-
-        # Case 2: Single array (binary or specific output format)
-        elif isinstance(shap_values, np.ndarray):
-            # If 3D array (samples, features, classes), extract for class
-            if len(shap_values.shape) == 3:
-                shap_values_for_class = shap_values[:, :, predicted_class_idx]
-            # If 2D array (samples, features), use as is
-            else:
-                shap_values_for_class = shap_values
-
-        # Extract contributions for the single sample
-        # shap_values_for_class is now (n_samples, n_features) -> (1, 12)
-        if shap_values_for_class is not None and len(shap_values_for_class) > 0:
-            sample_shap = shap_values_for_class[0]
-        else:
-            # Fallback if something fails
-            sample_shap = np.zeros(len(feature_list))
-
-        # Create dictionary for frontend
-        shap_contributions = {
-            feature_list[i]: float(sample_shap[i]) for i in range(len(feature_list))
-        }
 
         # Enhanced Feature Sensitivity Analysis & Counterfactuals
         sensitivity_analysis = []
@@ -657,30 +713,64 @@ def predict():
 
         # For attack predictions: find what would make it benign
         if predicted_class != "Benign":
-            # Try top 3 SHAP drivers
-            for idx in top_shap_indices[:3]:
+            # Try top SHAP drivers, but FILTER for base features only
+            top_features_indices = []
+
+            # Search deeper (top 20) to find enough base features, skipping engineered ones
+            for idx in top_shap_indices:
                 feature_name = feature_list[idx]
 
-                # Skip if SHAP contribution is not positive (not driving the attack)
-                if sample_shap[idx] <= 0:
+                # STRICT FILTER: Only allow base features that the user can modify
+                if feature_name not in base_feature_list:
                     continue
 
+                # We now check ALL top features, not just positive contributors,
+                # because increasing a low-value feature might also break the attack pattern.
+                top_features_indices.append(idx)
+
+                # Stop once we have 8 valid base features to test
+                if len(top_features_indices) >= 8:
+                    break
+
+            # 1. Single Feature Aggressive Search (Bidirectional)
+            for idx in top_features_indices:
+                feature_name = feature_list[idx]
                 display_name = FEATURE_DISPLAY_NAMES.get(feature_name, feature_name)
                 current_value = features[0][idx]
 
-                # Boundary detection: find tipping point
                 modification_found = False
 
-                # Try reducing by percentage, including aggressive reduction
-                for reduction_pct in [10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99, 100]:
-                    modified_features = features.copy()
+                # Try reducing AND increasing
+                test_values = []
 
-                    if reduction_pct == 100:
-                        modified_features[0][idx] = 0  # Set to 0
-                    else:
-                        modified_features[0][idx] = current_value * (
-                            1 - reduction_pct / 100
-                        )
+                # Reductions (Percentage)
+                for pct in [10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99]:
+                    test_values.append(current_value * (1 - pct / 100))
+
+                # Reductions (Absolute)
+                test_values.append(0)
+                test_values.append(scaler.mean_[idx])
+
+                # Increases (Multipliers) - NEW
+                # Only if current value is small enough that increasing it makes sense
+                if current_value < 1000000:  # Avoid overflowing massive values
+                    for mult in [1.5, 2.0, 3.0, 5.0, 10.0]:
+                        test_values.append(current_value * mult)
+
+                # Increases (Absolute high values) - NEW
+                # Try setting to a "high" value based on mean (e.g., 5x mean)
+                test_values.append(scaler.mean_[idx] * 5)
+
+                # Sort unique test values
+                test_values = sorted(list(set(test_values)))
+
+                for target_val in test_values:
+                    # Skip if target is too close to current
+                    if abs(target_val - current_value) < 0.001:
+                        continue
+
+                    modified_features = features.copy()
+                    modified_features[0][idx] = target_val
 
                     # Convert to DataFrame to preserve feature names for scaler
                     modified_df = pd.DataFrame(modified_features, columns=feature_list)
@@ -689,54 +779,94 @@ def predict():
                     new_pred_class = le.inverse_transform([np.argmax(new_pred_probs)])[
                         0
                     ]
-                    new_max_prob = float(np.max(new_pred_probs))
+
+                    # Determine action verb
+                    if target_val > current_value:
+                        action_verb = "Increase"
+                        action_gerund = "Increasing"
+                    elif target_val < current_value:
+                        action_verb = "Reduce"
+                        action_gerund = "Reducing"
+                    else:
+                        action_verb = "Change"
+                        action_gerund = "Changing"
 
                     # Check if prediction changed to Benign
                     if new_pred_class == "Benign":
-                        target_val = modified_features[0][idx]
                         counterfactuals.append(
                             {
                                 "feature": feature_name,
                                 "current_value": float(current_value),
                                 "target_value": float(target_val),
-                                "action": f"Reduce {display_name} to < {target_val:.1f}",
+                                "action": f"{action_verb} {display_name} to {format_value(feature_name, target_val)}",
                                 "impact": "Changes prediction to Benign",
                             }
                         )
-                        modification_found = True
-                        break
 
-                    # Check if prediction changed to ANY other class
+                        # Also add to Sensitivity Analysis as a "Critical Boundary"
+                        sensitivity_analysis.append(
+                            {
+                                "feature": feature_name,
+                                "type": "boundary",
+                                "current_value": float(current_value),
+                                "threshold_value": float(target_val),
+                                "reduction_percent": 0,
+                                "would_change_to": "Benign",
+                                "description": f"{action_gerund} {display_name} to {format_value(feature_name, target_val)} flips prediction to Benign",
+                            }
+                        )
+
+                        modification_found = True
+                        break  # Found a fix for this feature, move to next feature
+
+                    # Check if prediction changed to ANY other class (for Sensitivity Analysis)
                     elif new_pred_class != predicted_class and not modification_found:
                         sensitivity_analysis.append(
                             {
                                 "feature": feature_name,
                                 "type": "boundary",
                                 "current_value": float(current_value),
-                                "threshold_value": float(modified_features[0][idx]),
-                                "reduction_percent": reduction_pct,
+                                "threshold_value": float(target_val),
+                                "reduction_percent": 0,
                                 "would_change_to": new_pred_class,
-                                "description": f"Reducing {display_name} by {reduction_pct}% would change prediction to {new_pred_class}",
-                            }
-                        )
-                        modification_found = (
-                            True  # Don't break, keep looking for Benign
-                        )
-
-                    # Check for significant confidence drop
-                    elif max_prob - new_max_prob > 0.15 and not modification_found:
-                        sensitivity_analysis.append(
-                            {
-                                "feature": feature_name,
-                                "type": "confidence_impact",
-                                "current_value": float(current_value),
-                                "test_value": float(modified_features[0][idx]),
-                                "reduction_percent": reduction_pct,
-                                "confidence_drop": f"{max_prob:.0%} → {new_max_prob:.0%}",
-                                "description": f"Reducing {display_name} by {reduction_pct}% significantly lowers confidence",
+                                "description": f"{action_gerund} {display_name} to {format_value(feature_name, target_val)} changes prediction to {new_pred_class}",
                             }
                         )
                         modification_found = True
+                        # Continue searching for Benign even if we found another class
+
+            # 2. Multi-Feature Search (Pairs) if no single feature worked
+            if len(counterfactuals) == 0 and len(top_features_indices) >= 2:
+                import itertools
+
+                # Check pairs of top 5 features
+                for idx1, idx2 in itertools.combinations(top_features_indices[:5], 2):
+                    feature_name1 = feature_list[idx1]
+                    feature_name2 = feature_list[idx2]
+
+                    # Try setting both to 10% of current value (aggressive reduction)
+                    modified_features = features.copy()
+                    modified_features[0][idx1] = features[0][idx1] * 0.1
+                    modified_features[0][idx2] = features[0][idx2] * 0.1
+
+                    modified_df = pd.DataFrame(modified_features, columns=feature_list)
+                    modified_scaled = scaler.transform(modified_df)
+                    new_pred_probs = model.predict_proba(modified_scaled)[0]
+                    new_pred_class = le.inverse_transform([np.argmax(new_pred_probs)])[
+                        0
+                    ]
+
+                    if new_pred_class == "Benign":
+                        counterfactuals.append(
+                            {
+                                "feature": f"{feature_name1} + {feature_name2}",
+                                "current_value": 0,  # Dummy
+                                "target_value": 0,  # Dummy
+                                "action": f"Reduce {FEATURE_DISPLAY_NAMES.get(feature_name1, feature_name1)} AND {FEATURE_DISPLAY_NAMES.get(feature_name2, feature_name2)}",
+                                "impact": "Combined reduction changes prediction to Benign",
+                            }
+                        )
+                        break  # Found a pair, stop searching to avoid spam
 
         # For benign predictions: find what would trigger an alert
         else:
@@ -745,6 +875,8 @@ def predict():
                 "Total Fwd Packets",
                 "Flow Duration",
                 "RST Flag Count",
+                "Flow IAT Mean",
+                "Fwd Packet Length Max",
             ]
             for feature_name in suspicious_features:
                 try:
@@ -753,7 +885,7 @@ def predict():
                     current_value = features[0][idx]
 
                     # Test increasing suspicious features
-                    for increase_factor in [2, 3, 5, 10, 20]:
+                    for increase_factor in [1.5, 2, 3, 5, 10, 20]:
                         modified_features = features.copy()
                         modified_features[0][idx] = current_value * increase_factor
                         # Convert to DataFrame to preserve feature names for scaler
@@ -804,8 +936,9 @@ def predict():
         # Log input with port mapping
         dst_port = int(input_data.get("Dst Port", 0))
         port_str = PORT_MAP.get(dst_port, str(dst_port))
-        print(f"Input Features (first 5): {df.iloc[0].head().to_dict()}")
-        print(f"Dst Port: {port_str}")
+        # Debug output commented to prevent JSON parsing errors
+        # print(f"Input Features (first 5): {df.iloc[0].head().to_dict()}")
+        # print(f"Dst Port: {port_str}")
 
         # Format results
         result = []
@@ -815,10 +948,11 @@ def predict():
         # Sort by probability descending
         sorted_result = sorted(result, key=lambda x: x["probability"], reverse=True)
 
-        print("\n--- Prediction Probabilities ---")
-        for item in sorted_result:
-            print(f"{item['class']}: {item['probability']:.4f}")
-        print("--------------------------------\n")
+        # Debug output commented to prevent JSON parsing errors
+        # print("\n--- Prediction Probabilities ---")
+        # for item in sorted_result:
+        #     print(f"{item['class']}: {item['probability']:.4f}")
+        # print("--------------------------------\n")
 
         # --- SHAP Plotting ---
         shap_plot_base64 = ""
@@ -863,9 +997,8 @@ def predict():
             print(f"Error generating SHAP plot: {e}")
             shap_plot_base64 = ""
 
-        print(
-            f"DEBUG: Generated {len(counterfactuals)} counterfactuals: {counterfactuals}"
-        )
+        # Debug output commented to prevent JSON parsing errors
+        # print(f"DEBUG: Generated {len(counterfactuals)} counterfactuals: {counterfactuals}")
 
         # Generate local rule from SHAP values (always - surrogate model removed)
         local_rule = generate_shap_based_rule(
@@ -892,7 +1025,7 @@ def predict():
         import traceback
 
         traceback.print_exc()
-        print(f"Error during prediction: {e}")
+        # print(f"Error during prediction: {e}")  # Comment to prevent JSON parsing errors
         return jsonify({"error": str(e)}), 500
 
 
@@ -1059,7 +1192,7 @@ def analyze_feature():
         )
 
     except Exception as e:
-        print(f"Error in analysis: {e}")
+        # print(f"Error in analysis: {e}")  # Comment to prevent JSON parsing errors
         return jsonify({"error": str(e)}), 500
 
 

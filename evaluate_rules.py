@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 import glob
-from sklearn.metrics import classification_report, accuracy_score
+
 from preprocess import engineer_features
 from config import PORT_MAP
 

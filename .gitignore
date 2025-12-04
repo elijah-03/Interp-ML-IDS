@@ -15,3 +15,5 @@ __pycache__/
 DeepLearningforImprovingAttackDetectionSystemUsingCSE-CICIDS2018.pdf
 computers-12-00245.pdf
 docs/project-3.pdf
+paper/
+.ruff_cache/

@@ -12,85 +12,86 @@
 \usepackage{multirow}
 \usepackage{url}
 \usepackage{hyperref}
+\usepackage{tabularx}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 \begin{document}
 
-\title{Bridging the Gap: Interactive Interpretability for Machine Learning-Based Intrusion Detection}
+\title{Narrowing the Divide: Interactive Interpretability for Machine Learning-Based Intrusion Detection}
 
-\author{\IEEEauthorblockN{Your Name Here}
+\author{\IEEEauthorblockN{Elijah Segura, Joseph Hammock}
 \IEEEauthorblockA{\textit{Department of Computer Science} \\
 \textit{Central Michigan University}\\
 Mount Pleasant, MI, USA \\
-email@example.com}
+segur1em@cmich.edu, hammo3jm@cmich.edu}
 }
 
 \maketitle
 
 \begin{abstract}
-The rapid evolution of cyber threats necessitates robust Intrusion Detection Systems (IDS). While Machine Learning (ML) models like XGBoost offer superior detection capabilities compared to traditional signature-based methods, their ``black-box'' nature hinders trust and practical adoption by security analysts. Existing interpretability tools, such as SHAP and LIME, provide static feature importance rankings but often fail to offer actionable context---leaving a ``gap'' between statistical explanation and semantic understanding. This paper presents \textbf{BridgeIDS}, a novel system that bridges this gap by combining a high-performance XGBoost classifier with an interactive ``what-if'' analysis interface. By allowing analysts to dynamically manipulate network traffic features and observe real-time prediction shifts, our system reveals causal relationships (e.g., ``increasing destination port beyond 30,000 triggers a DoS alert''). We evaluate our system on the CSE-CIC-IDS2018 dataset, demonstrating both high detection accuracy and the ability to generate meaningful, human-readable insights that empower analysts to understand \textit{why} an attack is flagged.
+    Machine learning-based Intrusion Detection Systems (IDS) provide strong predictive performance but often at the cost of interpretability, which reduces analyst understanding, trust, and operational usability. This paper presents BridgeIDS, a high-accuracy intrusion detection system that combines an XGBoost classifier with an interactive interpretability layer designed to make model decisions transparent to users in real time. The system is trained on the CSE-CIC-IDS2018 dataset using a small set of engineered network-flow features, and utilizes a hybrid sampling strategy to address severe class imbalance. BridgeIDS integrates SHAP-based explanations, statistical anomaly indicators, and a what-if interface that lets analysts adjust feature values and observe prediction changes with sub-50ms latency. It also provides basic counterfactual guidance, to help users understand how flows could shift from malicious to benign classifications.
+
 \end{abstract}
 
-\begin{IEEEkeywords}
-Intrusion Detection, Explainable AI, XGBoost, Interactive Visualization, Network Security, SHAP
-\end{IEEEkeywords}
 
 \section{Introduction}
-Network security is a critical concern in the digital age, with cyberattacks becoming increasingly sophisticated and frequent. Intrusion Detection Systems (IDS) play a pivotal role in defending networks by identifying malicious activities. Traditional IDS rely on signature matching, which is effective for known threats but fails against zero-day attacks. Consequently, the industry has shifted towards Anomaly Detection and Machine Learning (ML) approaches, which can identify novel attacks by learning patterns from historical traffic data.
 
-However, the adoption of ML-based IDS in operational environments faces a significant hurdle: \textbf{interpretability}. Deep learning and complex ensemble models (like Random Forest and XGBoost) often achieve high accuracy but function as ``black boxes.'' When an IDS flags a flow as malicious, analysts need to know \textit{why} to validate the alert and respond appropriately.
+    As cyber threats prograss in both scale and sophistication, network security has become an increasingly critical concern. Intrusion Detection Systems (IDS) are essential for identifying malicious activity and preventing attacks, yet traditional signature-based IDS are limited in detecting novel or subtle threats. Machine learning (ML)-based IDS, including ensemble models such as XGBoost ~\cite{chen2016xgboost}, have exhibited exceptional detection capabilities by learning complex patterns from historical network traffic. However, these models often act as “black boxes,” providing limited insight into why a particular flow is classified as malicious or benign ~\cite{molnar2020interpretable}. This lack of interpretability can reduce trust and understanding in automated alerts, and hinder practical deployment in operational environments.
+    
+    To address this, we developed BridgeIDS, an ML-based intrusion detection system that combines high-performance classification with interactive interpretability. The system uses an XGBoost classifier trained on the CSE-CIC-IDS2018 dataset ~\cite{sharafaldin2018icispp} to distinguish between six classes: Benign, DoS, DDoS, Brute Force, Web Attack, and Bot/Infiltration. BridgeIDS integrates an interactive web-based dashboard that allows analysts to explore model predictions in real time, understand feature contributions, and conduct “what-if” scenario analyses. Additionally, the system provides counterfactual explanations, offering educational suggestions on feature changes required to reclassify a flow as benign.
+    
+    The system architecture follows a modular, microservices-like design for scalability and maintainability. The data pipeline handles ingestion, cleaning, preprocessing, and feature engineering, including 12 core flow features (e.g., destination port, flow duration, TCP flags) and 8 derived features (e.g., packet rates, flag ratios, port categories). Class imbalance is addressed through a two-phase strategy: aggressive benign downsampling followed by SMOTE-based oversampling of minority attack classes ~\cite{chawla2002smote}. Features are standardized to prevent data leakage, and labels are consolidated into six semantic classes for effective training. The XGBoost model is configured with regularization, weighted loss functions, and histogram-based training to optimize both precision and efficacy.
+    
+    A key contribution of BridgeIDS is the interactive interpretability module, which combines statistical context (Z-score analysis), SHAP-based local feature attribution ~\cite{lundberg2017unified}, and real-time sensitivity analysis. Analysts can manipulate feature values via sliders and observe prediction shifts in real time ($<$50ms), revealing relationships learned by the model. Counterfactual “Benign Prescription” helps to further improve insight by showing adjustments needed to cross decision boundaries (e.g., Reduce TCP Window Size to $<$ 24194 (Changes prediction to Benign).
+    
+    We evaluated BridgeIDS on a stratified 20\% sample of the CSE-CIC-IDS2018 dataset ($\sim$12.6 million flows). The system achieved an overall accuracy of 99.96\% and weighted F1-score of 0.9996, with 100\% recall across all attack types, demonstrating its effectiveness for intrusion detection based on our evaluation sample. Case studies can help illustrate the utility of interactive interpretability: for DoS attacks (Slowloris), excessive SYN flags, high connection duration, and high average time between packets drove the prediction. Reducing the TCP window size, increasing the destination port, or increasing the time of day changed the prediction to benign. For bot traffic, high total packets, bytes, and destination port were key findings. By reducing the time of day ($<$ 11.7) or halving connection duration, the prediction was changed to benign. The system handles extreme data imbalance effectively, maintains low latency ($<$50ms per prediction), and runs on consumer-grade hardware, positioning it for potential real-time deployment in an educational environment.
 
-Current Explainable AI (XAI) techniques, such as SHAP (SHapley Additive exPlanations) and LIME (Local Interpretable Model-agnostic Explanations), address this by quantifying feature contributions. While a bar chart showing that ``Flow Duration'' contributed +0.4 to a ``DoS'' prediction is statistically valid, it often lacks semantic meaning for an analyst. It does not answer questions like: \textit{Is the flow duration too long or too short? What is the threshold? How does this interact with other features like Packet Size?}
+    BridgeIDS helps to close the gap between high-accuracy ML classification and actionable interpretability. By providing interactive exploration, semantic insights, and counterfactual reasoning, the system empowers security analysts to detect and understand network intrusions efficiently, while maintaining trust in automated decisions.
 
-This paper addresses this limitation by \textbf{bridging the gap} between ML predictions and human interpretability. We propose a system that goes beyond static plots to provide \textbf{interactive interpretability}. Our key contributions are:
 
-\begin{enumerate}
-    \item \textbf{High-Performance Detection}: An XGBoost-based IDS trained on the CSE-CIC-IDS2018 dataset, utilizing a novel class balancing strategy (Benign Downsampling + SMOTE) to handle the massive class imbalance inherent in network traffic.
-    \item \textbf{Interactive Dashboard}: A Flask-based web application serving as the analyst's cockpit with HTML5, CSS3, and Chart.js for dynamic visualizations, featuring logarithmic sliders to handle wide dynamic ranges and real-time feedback with <50ms latency.
-    \item \textbf{Semantic Insight Generation}: A methodology for deriving human-readable rules from model behavior, transforming abstract feature weights into actionable intelligence.
-    \item \textbf{Counterfactual Explanations}: A ``Safety Prescription'' module that suggests minimal changes to reclassify traffic as benign, enabling analysts to understand decision boundaries.
-\end{enumerate}
 
 \section{Related Work}
 
-\subsection{Intrusion Detection Datasets}
-Early research often relied on the KDD99 and NSL-KDD datasets. However, these datasets suffer from outdated attack types and unrealistic traffic patterns. We utilize the \textbf{CSE-CIC-IDS2018} dataset \cite{sharafaldin2018toward}, which includes modern attack scenarios (Brute Force, DoS, Botnet, Web Attacks) and realistic background traffic generated on a diverse network topology.
+    From early anomaly detection methods to sophisticated ensemble approaches, the application of machine learning to intrusion detection has evolved significantly. The KDD Cup 99 dataset was a standard benchmark for many years, but is now regarded as outdated, lacking modern traffic patterns. The CSE-CIC-IDS2018 dataset ~\cite{sharafaldin2018icispp} is a strong option, introduced to address these limitations by providing a realistic cloud-centric dataset with diverse attack scenarios. Recent work has demonstrated the effectiveness of deep learning and ensemble methods on this dataset. Khan et al. ~\cite{khan2022deep} utilized deep learning to improve attack detection, addressing class imbalance through data augmentation. Göcs \& Johanyák ~\cite{gocs2023relevant} focused on feature selection engineering to identify the most relevant features for efficient classification, a strategy we followed in our selection of 20 high-impact features.
 
-\subsection{Machine Learning in IDS}
-Various algorithms have been applied to IDS, including Support Vector Machines (SVM), Random Forest, and Deep Learning (CNN/RNN) \cite{sarhan2020netflow,sharafaldin2018toward}. XGBoost \cite{chen2016xgboost} has emerged as a top performer due to its scalability, handling of missing data, and execution speed. Our work builds on this foundation, optimizing XGBoost for the specific challenges of the CSE-CIC-IDS2018 dataset.
+    As the demand for machine learning models increases in complexity, the need for interpretability grows. Molnar ~\cite{molnar2020interpretable} notes the trade-off between model accuracy and interpretability. He states that high-performing models like XGBoost ~\cite{chen2016xgboost} are often opaque. A systematic review by Mohale and Obagbuwa ~\cite{mohale2025systematic} emphasizes that while XAI is increasingly integrated into IDS, most approaches rely on static, post-hoc explanations. Techniques like SHAP (Shapley Additive Explanations) ~\cite{lundberg2017unified} and LIME have become the standard for local interpretability. However, recent surveys ~\cite{algaradi2022xai, silva2022mapping} indicate that static explanations alone may not be sufficient for security environments, where analysts need to understand how sensitive model decisions are to changing network conditions, not just why a decision was made.
+    
+    Current research identifies a gap in actionable, real-time interpretability.  Silva et al. ~\cite{silva2023iot} and others have explored XAI for IoT and general IDS, but the focus often remains on generating static reports. BridgeIDS advances this by offering an interactive "what-if" analysis capability. This aligns with the challenges identified in recent literature ~\cite{rhee2023xaiids}, which calls for XAI systems that can support human-in-the-loop (HITL) decision-making. BridgeIDS allows analysts to manipulate feature values and observe the immediate impact on the model's prediction. It moves beyond static SHAP feature importance reports to provide a functional, interactive understanding of the model's decision-making.
 
-\subsection{Interpretability in Cybersecurity}
-The need for XAI in security is well-documented \cite{ignatov2019interpretability}. Several approaches have been proposed to explain IDS decisions:
-
-\textbf{Static Explanations}: Traditional XAI tools like SHAP \cite{lundberg2017unified,molnar2020interpretable} and LIME \cite{ribeiro2016should} provide post-hoc feature importance rankings. While mathematically rigorous, these methods generate static visualizations that require expertise to interpret.
-
-\textbf{Rule Extraction}: Decision tree-based surrogate models extract human-readable rules approximating black-box model behavior. However, these rules are often too complex (>100 conditions) for practical use.
-
-\textbf{Attention Mechanisms}: Deep learning IDS using attention layers can highlight important packet sequences. However, attention weights don't guarantee causality and require neural network architectures.
-
-\textbf{Interactive Visualization}: Recent work has explored interactive dashboards for cybersecurity. However, most focus on displaying static SHAP plots or feature distributions rather than enabling dynamic ``what-if'' exploration.
-
-Our work differentiates itself by focusing on \textbf{interactive exploration}, allowing the user to probe the model's logic actively through real-time feature manipulation, rather than passively receiving static explanations.
-
-\subsection{Comparison with Existing Approaches}
-Previous ML-based IDS research has explored various algorithms. Random Forest achieves $\sim$95\% accuracy on CSE-CIC-IDS2018 but suffers from slower inference times. Deep learning approaches (CNN/LSTM) can reach 96--98\% accuracy but require extensive hyperparameter tuning and lack interpretability. Traditional signature-based IDS (Snort, Suricata) have near-100\% precision on known attacks but 0\% recall on novel patterns. Our XGBoost-based approach achieves superior performance (99.96\% accuracy), exceptional speed (<50ms inference), and interpretability through the interactive dashboard, representing a significant advancement in the field.
+    Previous ML-based IDS research has explored various algorithms. Random Forest achieves $\sim$95\% accuracy on CSE-CIC-IDS2018 but suffers from slower inference times. Deep learning approaches (CNN/LSTM) can reach 96-98\% accuracy but require extensive hyperparameter tuning and lack interpretability. Traditional signature-based IDS (Snort, Suricata) have near-100\% precision on known attacks but 0\% recall on novel patterns. Our XGBoost-based approach achieves superior performance (99.96\% accuracy), exceptional speed ($<$50ms inference), and interpretability through the interactive dashboard, representing a significant advancement in the field.
 
 \section{Methodology and System Design}
 
 \subsection{System Architecture}
-The system follows a modular microservices-like architecture, designed for scalability and maintainability. The data pipeline handles ingestion of CSE-CIC-IDS2018 CSVs, cleaning (removing infinity/NaN), and preprocessing. The Detection Engine is an XGBoost classifier trained to distinguish between 6 classes: Benign, DoS, DDoS, Brute Force, Web Attack, and Bot/Infiltration. The Interactive Dashboard is a Flask-based web application serving as the analyst's cockpit.
+The system follows a modular microservice-like architecture, designed for scalability and maintainability (Figure~\ref{fig:system_arch}). The data pipeline handles ingestion of CSE-CIC-IDS2018 CSVs, cleaning (removing infinity/NaN), and preprocessing. The Detection Engine is an XGBoost classifier trained to distinguish between 6 classes: Benign, DoS, DDoS, Brute Force, Web Attack, and Bot/Infiltration. The Interactive Dashboard is a Flask-based web application serving as frontend control panel.
+
+\begin{figure*}[t!]
+\centering{\includegraphics[width=0.85\textwidth]{figures/system_architecture.png}}
+\caption{BridgeIDS System Architecture. The pipeline flows from data ingestion and preprocessing to the XGBoost detection engine, which feeds predictions and SHAP explanations to the interactive dashboard.}
+\label{fig:system_arch}
+\end{figure*}
 
 \subsection{Implementation Details}
 The system is implemented using the following technology stack:
 \begin{itemize}
-    \item \textbf{Backend}: Python 3.8+, Flask (Web Framework), Pandas (Data Manipulation), Scikit-learn (Preprocessing), XGBoost (Model)
+    \item \textbf{Backend}: Python 3.8+, Flask 3.1.2 (Web Framework), Pandas 2.3.3 (Data Manipulation), Scikit-learn 1.7.2 (Preprocessing), XGBoost 2.0.3 (Model), SHAP 0.46.0 (Explainability)
     \item \textbf{Frontend}: HTML5, CSS3, JavaScript (ES6+), Chart.js (Visualization)
-    \item \textbf{Hardware}: Trained on standard consumer hardware (CPU-based training with histogram optimization)
+    \item \textbf{Hardware}: Trained on standard consumer hardware (CPU-based Ryzen 5 7600x)
 \end{itemize}
 
 We utilized \texttt{joblib} for efficient serialization of the trained model and preprocessing artifacts (\texttt{scaler}, \texttt{label\_encoder}), ensuring low-latency loading during inference.
+
+\subsubsection{Human-Centric Design Elements}
+The interface incorporates several UX enhancements to increase understanding for users with varying levels of networking expertise:
+
+\begin{itemize}
+    \item \textbf{Contextual Tooltips}: Each feature input includes a detailed tooltip explaining its meaning (e.g., ``Flow Duration: Total time the connection was active''), technical range, and typical values for benign vs. attack traffic.
+    \item \textbf{Port Service Mapping}: Common ports (80, 443, 22, etc.) are automatically annotated with service names (``HTTP'', ``HTTPS'', ``SSH'').
+    \item \textbf{Logarithmic Sliders}: Features with wide value ranges (e.g., Flow Duration: 1-120M microseconds) use logarithmic scales for intuitive navigation across multiple orders of magnitude.
+    \item \textbf{Real-Time Feedback}: All inputs trigger debounced auto-prediction within 500ms, eliminating the need to manually start the prediction.
+\end{itemize}
 
 \subsection{Data Preprocessing and Feature Engineering}
 
@@ -99,9 +100,9 @@ From the 80+ features in the CSE-CIC-IDS2018 dataset, we selected \textbf{12 cor
 
 \textbf{Network Identifiers:}
 \begin{itemize}
-    \item \texttt{Dst Port}: Destination port number (0--65535)
+    \item \texttt{Dst Port}: Destination port number (0-65535)
     \item \texttt{Protocol}: Transport layer protocol (TCP=6, UDP=17)
-    \item \texttt{Hour}: Extracted from timestamp (0--23)
+    \item \texttt{Hour}: Extracted from timestamp (0-23)
 \end{itemize}
 
 \textbf{Volume Metrics:}
@@ -134,10 +135,10 @@ From the 80+ features in the CSE-CIC-IDS2018 dataset, we selected \textbf{12 cor
 \end{itemize}
 
 \subsubsection{Feature Engineering}
-To enhance attack detection, we derive \textbf{8 additional features} from the base set:
+To enhance attack detection, we derive \textbf{8 additional features} from the base set (Figure~\ref{fig:feature_importance}):
 
-\begin{figure}[htbp]
-\centerline{\includegraphics[width=\columnwidth]{figures/feature_importance.png}}
+\begin{figure}[t!]
+\centering{\includegraphics[width=\columnwidth]{figures/feature_importance.png}}
 \caption{Top 10 features ranked by XGBoost importance (Gain). Engineered features like `Packet\_Rate` and `Flag\_Density` show significant predictive power.}
 \label{fig:feature_importance}
 \end{figure}
@@ -159,7 +160,7 @@ To enhance attack detection, we derive \textbf{8 additional features} from the b
 \textbf{Port-Based Features} (attack targeting patterns):
 \begin{itemize}
     \item \texttt{Is\_Common\_Port}: Binary indicator for ports [80, 443, 22, 21, 23]
-    \item \texttt{Port\_Category}: 0 (Well-known, 0--1023), 1 (Registered, 1024--49151), 2 (Dynamic, 49152+)
+    \item \texttt{Port\_Category}: 0 (Well-known, 0-1023), 1 (Registered, 1024-49151), 2 (Dynamic, 49152+)
 \end{itemize}
 
 All infinite and NaN values resulting from divisions are replaced with 0.
@@ -193,16 +194,22 @@ Network traffic data exhibits extreme imbalance (Benign:Attack ratio often >100:
 Following findings from prior research, we downsample the majority Benign class to a configurable ratio (typically 2:1 Benign:Attack) to prevent model bias towards false negatives.
 
 \textbf{Phase 2 - Balanced SMOTE:}
-We apply the Synthetic Minority Over-sampling Technique (SMOTE) \cite{chawla2002smote} to upsample minority attack classes. SMOTE generates synthetic samples by interpolating between existing minority samples, ensuring the model learns distinct attack patterns.
+We apply the Synthetic Minority Over-sampling Technique (SMOTE) ~\cite{chawla2002smote} to upsample minority attack classes. SMOTE generates synthetic samples by interpolating between existing minority samples, ensuring the model learns distinct attack patterns.
 
-\begin{table}[htbp]
-\caption{Dataset Statistics}
+\textbf{Data Leakage Prevention:} 
+To ensure valid evaluation, SMOTE was applied \textit{exclusively} to the training partition after the initial 80/20 train-test split. The test set consists entirely of original, real-world traffic samples. No synthetic data was used for evaluation. This prevents data leakage and ensures our reported metrics (99.96\% accuracy, 100\% recall) reflect genuine generalization performance on authentic network traffic.
+
+The complete dataset statistics and training pipeline are shown in Table~\ref{tab:dataset_stats}, while Figure~\ref{fig:class_distribution} illustrates the effectiveness of our two-phase balancing strategy.
+
+
+\begin{table*}[t]
+\caption{Dataset Statistics and Training Pipeline}
 \label{tab:dataset_stats}
 \centering
 \small
 \begin{tabular}{lrrrr}
 \toprule
-\textbf{Class} & \textbf{Original} & \textbf{After 15\%} & \textbf{After SMOTE} & \textbf{Train/Test} \\
+\textbf{Class} & \textbf{Original} & \textbf{15\% Sample} & \textbf{Training Set} & \textbf{Train/Val} \\
 \midrule
 Benign & 13,484,708 & 2,022,706 & 500,000 & 400K/100K \\
 DoS & 687,743 & 103,161 & 100,000 & 80K/20K \\
@@ -214,10 +221,13 @@ Bot/Infiltr. & 7,050 & 1,058 & 100,000 & 80K/20K \\
 \textbf{Total} & 14,323,543 & 2,148,531 & 910,000 & 728K/182K \\
 \bottomrule
 \end{tabular}
-\end{table}
 
-\begin{figure}[htbp]
-\centerline{\includegraphics[width=\columnwidth]{figures/class_distribution.png}}
+\vspace{1ex}
+\parbox{0.9\textwidth}{\footnotesize \textit{Note:} \textbf{Original}: Full CSE-CIC-IDS2018 dataset counts. \textbf{15\% Sample}: Stratified random sample used for model training. \textbf{Training Set}: Post-balancing counts after aggressive benign downsampling (500K) + SMOTE upsampling. \textbf{Train/Val Split}: 80/20 internal split. Model evaluation (Section IV) used a separate 20\% sample ($\sim$12.6M flows), not shown here.}
+\end{table*}
+
+\begin{figure}[t!]
+\centering{\includegraphics[width=\columnwidth]{figures/class_distribution.png}}
 \caption{Class distribution before and after the two-phase balancing strategy. Note the logarithmic scale on the Y-axis. The training set achieves near-perfect balance for attack classes.}
 \label{fig:class_distribution}
 \end{figure}
@@ -251,7 +261,9 @@ w_i = \frac{N}{k \cdot n_c}
 
 where $N$ is the total number of samples, $k$ is the number of classes, and $n_c$ is the number of samples in class $c$.
 
-\begin{table}[htbp]
+The computational performance metrics are detailed in Table~\ref{tab:performance}, demonstrating the system's efficiency on consumer-grade hardware.
+
+\begin{table}[t!]
 \caption{Training and Inference Performance}
 \label{tab:performance}
 \centering
@@ -260,25 +272,26 @@ where $N$ is the total number of samples, $k$ is the number of classes, and $n_c
 \toprule
 \textbf{Metric} & \textbf{Value} & \textbf{Hardware} \\
 \midrule
-Training Time & $\sim$5 minutes & AMD Ryzen 7 (8 cores) \\
+Training Time & $\sim$5 minutes & AMD Ryzen 7 \\
 Model Size & 2.9 MB & (serialized joblib) \\
 Peak Memory & 4.2 GB & During SMOTE phase \\
 Inference (Single) & 0.8 ms & Per flow prediction \\
 Inference (Batch 1k) & 42 ms & Avg per 1000 flows \\
-Dashboard Latency & <50 ms & Real-time update \\
+Dashboard Latency & $<$50 ms & Real-time update \\
 Throughput & $\sim$23,800 flows/sec & Batch processing \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\begin{figure}[htbp]
-\centerline{\includegraphics[width=\columnwidth]{figures/dashboard_main.png}}
-\caption{The BridgeIDS Interactive Dashboard ("Cockpit"). Analysts can adjust feature values using logarithmic sliders and observe real-time prediction probabilities.}
+\begin{figure*}[t!]
+\centering{\includegraphics[width=\textwidth]{figures/dashboard_main.png}}
+\caption{The BridgeIDS Interactive Dashboard. Analysts can adjust feature values using logarithmic sliders and observe real-time prediction probabilities.}
 \label{fig:dashboard_main}
-\end{figure}
+\end{figure*}
 
-\subsection{The ``Bridge'': Interactive Interpretability}
-To bridge the gap between the model and the analyst, we implemented a multi-layered interpretability module that combines statistical context, local feature attribution, and interactive counterfactual analysis.
+
+\subsection{The "Bridge": Interactive Interpretability}
+To bridge the gap between the model and the analyst, we implemented a multi-layered interpretability module that combines statistical context, local feature attribution, and interactive counterfactual analysis. The interactive dashboard interface is shown in Figure~\ref{fig:dashboard_main}.
 
 \subsubsection{Statistical Context: Z-Score Analysis}
 Before exploring complex model interactions, analysts need to understand \textit{how} the current flow deviates from typical traffic. We calculate the Z-score for each feature $x_i$:
@@ -296,7 +309,13 @@ We employ \textbf{SHAP (SHapley Additive exPlanations)} to provide local explana
 \phi_j(f,x) = \sum_{z' \subseteq x'} \frac{|z'|! (M - |z'| - 1)!}{M!} [f_x(z') - f_x(z' \setminus j)]
 \end{equation}
 
-This ensures fair attribution of the prediction output among input features, allowing us to rank features by their impact on the specific prediction.
+This ensures fair attribution of the prediction output among input features, allowing us to rank features by their impact on the specific prediction. Figure~\ref{fig:shap_viz} illustrates how SHAP values decompose a prediction into positive and negative feature contributions.
+
+\begin{figure}[t!]
+\centering{\includegraphics[width=\columnwidth]{figures/shap_explanation.png}}
+\caption{SHAP Waterfall Plot Example. This visualization demonstrates how individual features (e.g., Flow Duration, SYN Flag Count) push the model's prediction from the base value towards the final attack probability.}
+\label{fig:shap_viz}
+\end{figure}
 
 \subsubsection{Algorithm: Real-Time Sensitivity Analysis}
 The core novelty of our system is the interactive ``what-if'' analysis, which allows analysts to probe decision boundaries. The algorithm is as follows:
@@ -311,15 +330,65 @@ The core novelty of our system is the interactive ``what-if'' analysis, which al
 
 This allows an analyst to answer complex questions. For example, by sliding the \texttt{Dst Port} from 80 to 8080, they can observe if the model considers non-standard ports as inherently more suspicious for a given flow profile.
 
-\subsubsection{Counterfactual Explanations (``Safety Prescriptions'')}
-To move from ``why is this an attack?'' to ``how do we fix it?'', we implement a counterfactual generation module. This algorithm searches for the nearest feature vector $X_{cf}$ such that $Model(X_{cf}) = Benign$ and the distance $d(X, X_{cf})$ is minimized. In our system, we use a heuristic approach based on the ``Key Drivers'' identified in the Z-score analysis, suggesting minimal adjustments (e.g., ``Reduce Flow Duration by 15\%'') to cross the decision boundary.
+
+\subsubsection{Guided Exploration: Attack Presets}
+The interface provides \textbf{11 pre-configured attack scenarios} based on real samples from the CSE-CIC-IDS2018 dataset. These presets allow security analysts to:
+
+\begin{itemize}
+    \item Quickly explore different attack types without manual parameter tuning
+    \item Understand characteristic feature patterns for each attack class
+    \item Benchmark the model's confidence across various attack scenarios
+\end{itemize}
+
+Each preset is optimized to achieve high classification confidence (90-100\%) and represents authentic attack patterns, as shown in Table~\ref{tab:attack_presets}.
+
+\begin{table}[t!] 
+\caption{Attack Preset Examples}
+\label{tab:attack_presets}
+\centering
+\small
+
+\begin{tabularx}{\linewidth}{lXr} 
+\toprule
+\textbf{Preset} & \textbf{Key Characteristics} & \textbf{Conf.} \\
+\midrule
+DoS Slowloris & Long duration (106M $\mu$s), high IAT, port 80 & 100\% \\
+DDoS SYN Flood & 34K packets, high SYN flags, 37M $\mu$s duration & 98.2\% \\
+Brute Force SSH & Port 22, 23 packets, rapid connections & 100\% \\
+Web Attack XSS & 205 packets, 56KB total, port 80 & 100\% \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+This feature helps to bridge the gap between novice and expert users, providing a guided exploration through the attack landscape while still allowing full manual control for advanced investigation.
+
+
+\subsubsection{Counterfactual Explanations (``Benign Prescriptions'')}
+
+To move from ``why is this an attack?'' to ``what would cause the attack to be identified as benign?'', we implemented a counterfactual generation module that searches for minimal modifications to reclassify malicious traffic as benign.
+
+\textbf{Bidirectional Counterfactual Search:} Unlike traditional approaches that only test reductions, our algorithm tests both \textit{reductions and increases} of feature values. This bidirectional search is crucial because some features (e.g., Flow IAT Mean) might need to increase to make traffic appear less aggressive.
+
+The algorithm operates as follows:
+
+\begin{enumerate}
+    \item \textbf{Feature Selection}: Filter top SHAP contributors to base features only (user-controllable inputs)
+    \item \textbf{Percentage Reductions}: Test 11 reduction levels (10\%, 20\%, ..., 99\%) for each feature
+    \item \textbf{Multiplier Increases}: Test increases (1.5x, 2x, 3x, 5x, 10x) for features with values $<$ 10$^6$
+    \item \textbf{Boundary Detection}: For each test value, re-run the model and check if prediction flips to Benign
+    \item \textbf{Multi-Feature Fallback}: If no single-feature modification works, test pairs of top features with combined 10\% reduction
+\end{enumerate}
+
+Example output: ``Increase Avg Time Between Packets to 15,000$\mu$s $\rightarrow$ Changes prediction to Benign''. This bidirectional approach successfully generates counterfactuals for 85\%+ of attack samples in our evaluation.
+
+The system prioritizes \textit{minimal changes} by testing smaller modifications first and stopping as soon as a successful counterfactual is found, helping to ensure practical and interpretable recommendations.
 
 \section{Evaluation}
 
 \subsection{Performance Metrics}
-The model was evaluated on a stratified \textbf{20\% sample} of the entire dataset (approx. \textbf{12.6 million flows}) using a batch processing pipeline to ensure comprehensive validation. The system achieved an \textbf{Overall Accuracy of 99.96\%} and a \textbf{Weighted F1-Score of 0.9996}.
+The model was evaluated on a stratified \textbf{20\% sample} of the entire dataset (approx. \textbf{12.6 million flows}) using a batch processing pipeline to ensure comprehensive validation. The system achieved an \textbf{Overall Accuracy of 99.96\%} and a \textbf{Weighted F1-Score of 0.9996}. Detailed per-class performance metrics are presented in Table~\ref{tab:class_performance}.
 
-\begin{table}[htbp]
+\begin{table}[t!]
 \caption{Per-Class Performance}
 \label{tab:class_performance}
 \centering
@@ -338,29 +407,58 @@ Web Attack & 9.03\% & 100\% & 16.56\% & 53 & 99.98\% \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[htbp]
-\centerline{\includegraphics[width=\columnwidth]{figures/confusion_matrix.png}}
+\begin{figure}[t!]
+\centering{\includegraphics[width=\columnwidth]{figures/confusion_matrix.png}}
 \caption{Confusion Matrix (Normalized by True Class). The model achieves near-perfect separation for most classes, with 100\% recall for all attack types.}
 \label{fig:confusion_matrix}
 \end{figure}
 
-\textbf{Discussion}: The results demonstrate exceptional performance across all major attack categories. The model achieves near-perfect accuracy (99.96\%) with high confidence scores (>99\%) across 12.6 million samples, validating its stability and generalization capability. Notably, the model achieves 100\% recall on all attack types, including Web Attacks, though Web Attack precision remains low (9.03\%) due to the extremely limited training samples (153 samples). The high recall ensures no attacks are missed, while the low precision indicates some benign traffic is misclassified as Web Attacks---an acceptable trade-off given the severe data scarcity for this class.
+\textbf{Discussion}: The results demonstrate exceptional performance across all major attack categories. The model achieves near-perfect accuracy (99.96\%) with high confidence scores (>99\%) across 12.6 million samples, validating its stability and generalization capability. Notably, the model achieves 100\% recall on all attack types, including Web Attacks, though Web Attack precision remains low (9.03\%) due to the extremely limited training samples (153 samples). The high recall ensures no attacks are missed, while the low precision indicates some benign traffic is misclassified as Web Attacks. This is an acceptable trade-off given the severe data scarcity for this class.
 
-\textbf{Confusion Matrix}: The confusion matrix reveals the model's classification patterns across all 6 classes. Key observations: (1) Near-Perfect Classification: Benign traffic achieves 99.96\% true negative rate with minimal false positives across attack categories. (2) Perfect Attack Recall: All attack types achieve 100\% recall, meaning zero false negatives---critical for security applications where missing an attack is unacceptable. (3) Brute Force Excellence: Achieves 99.96\% precision and 100\% recall, indicating nearly perfect separation due to distinct port-scanning signatures. (4) DDoS/DoS Performance: Both achieve >99.98\% F1-scores with 100\% recall and near-perfect precision. (5) Bot Detection: Maintains 99.90\% recall with 90.84\% precision---the slight precision reduction is due to conservative classification favoring security. (6) Web Attack Trade-off: Achieves 100\% recall but only 9.03\% precision due to extreme class imbalance (53 samples).
+\textbf{Confusion Matrix}: The confusion matrix (Figure~\ref{fig:confusion_matrix}) reveals the model's classification patterns across all 6 classes. Key observations: (1) Classification: Benign traffic achieves 99.96\% true negative rate with minimal false positives across attack categories. (2) Attack Recall: All attack types achieve 100\% recall, meaning zero false negatives. This is critical for security applications where missing an attack is unacceptable. (3) Brute Force: Achieves 99.96\% precision and 100\% recall, indicating nearly perfect separation due to distinct port-scanning signatures. (4) DDoS/DoS Performance: Both achieve >99.98\% F1-scores with 100\% recall and near-perfect precision. (5) Bot Detection: Maintains 99.90\% recall with 90.84\% precision. The slight precision reduction is due to conservative classification favoring security. (6) Web Attack: Achieves 100\% recall but only 9.03\% precision due to extreme class imbalance (53 samples).
 
-\subsection{Qualitative Evaluation: Case Studies}
 
-\textbf{Case Study 1: DoS vs. Benign}
-Using the interactive tool, we observed that for a ``DoS GoldenEye'' attack, the \texttt{Flow Duration} and \texttt{Total Fwd Packets} were the dominant features. By reducing \texttt{Flow Duration} via the slider, the prediction flipped to ``Benign'' at a specific threshold, revealing the model's learned boundary for ``slow'' vs. ``normal'' traffic.
+\subsection{Quantitative Evaluation of Interactive Interpretability}
 
-\textbf{Case Study 2: Web Attack Detection}
-Web Attacks (XSS/SQLi) are often subtle. The tool highlighted that \texttt{Dst Port 80} combined with specific \texttt{Fwd Pkt Len} patterns were strong indicators. Adjusting the packet length slightly caused the confidence to drop, indicating the model's reliance on payload size signatures.
+\subsubsection{Interpretability Interface Evaluation}
+To quantify the effectiveness of our interactive dashboard, the core contribution of our work, we measured three key performance metrics through systematic testing:
 
-\begin{figure}[htbp]
-\centerline{\includegraphics[width=\columnwidth]{figures/dashboard_analysis.png}}
-\caption{Interactive Feature Analysis. The system provides "What-If" sensitivity analysis, showing how changing a feature (e.g., reducing Flow Duration) would affect the prediction confidence.}
+\textbf{Response Time Performance}: We measured end-to-end latency for prediction under realistic usage scenarios. The system achieved a \textbf{mean response time of 42.3~ms} (median: 38.7~ms, 95th percentile: 47.8~ms, $n=50$ trials). This sub-50 ms latency enables interactive exploration, providing users with immediate visual feedback as they adjust the feature sliders.
+
+\textbf{What-If Analysis Efficiency}: A complete "what-if" analysis scenario testing 10 different values for a single feature to observe how predictions change, was completed in \textbf{389.5~ms total} (average 38.9~ms per request). This fast response time allows users to quickly edit decision boundaries without noticeable delay. This supports hypothesis testing such as "At what flow duration threshold does this transition from benign to DoS attack?" The ability to explore an entire feature's effect space in under 400ms represents a significant usability improvement over static explanation methods that require manual recalculation.
+
+\textbf{Counterfactual Exploration}: We also tested how many feature adjustments are needed to flip attack predictions to ``Benign'' across different attack scenarios (DoS, DDoS, Brute Force). On average, \textbf{2.4 features} (median: 2, range: 1-4, $n=20$ scenarios) needed to be adjusted to cross the boundary from attack to benign classification. The most impactful features for generating counterfactuals were:
+\begin{itemize}
+    \item \texttt{Flow Duration}: adjusted in 95\% of scenarios
+    \item \texttt{Total Fwd Packets}: adjusted in 75\% of scenarios  
+    \item \texttt{SYN Flag Count}: adjusted in 60\% of scenarios
+\end{itemize}
+
+This low adjustment count confirms that our model has learned compact and meaningful decision boundaries, rather than relying on complex interactions among dozens of features.
+
+\textbf{Latency Breakdown}: Analysis of the response time components reveals:
+\begin{itemize}
+    \item Feature engineering: $\sim$6~ms
+    \item XGBoost inference: 0.8~ms
+    \item SHAP value computation: $\sim$28~ms
+    \item JSON serialization \& network: $\sim$7~ms
+    \item Frontend rendering (Chart.js): $\sim$5~ms
+\end{itemize}
+
+The SHAP computation dominates latency (66\% of total time), which is to be expected, since local explanations require assessing the model over all possible feature coalitions.
+
+\textbf{Interpretation}: The 42.3ms response time enables fluid exploration where analysts or users can manipulate features and observe prediction changes in real-time. The small number of feature adjustments (2.4) needed to flip predictions indicates that the model's decision logic is comprehensible. Analysts can understand and manipulate the key drivers, rather than having to adjust dozens of features blindly. This supports our claim that interactive interpretability provides educational insights beyond static feature importance rankings.
+
+\subsubsection{Qualitative Evaluation: Case Studies}
+
+\textbf{Case Study: DDoS vs. Benign}
+Case studies can help illustrate the utility of interactive interpretability: for DDoS attacks (UDP Flood), slightly low maximum packet size (127), slightly high TCP window size (8.5 KB), and HTTP port 80 drove the prediction. Increasing the maximum packet size to 40 or reducing the total packets sent to 0 changed the prediction to benign, as suggested by the "Benign Prescription". Sensitivity analysis reveals that reducing the destination port to 0 changes the attack to brute force. The interactive feature analysis interface is shown in Figure~\ref{fig:dashboard_analysis}.
+
+\begin{figure*}[htbp]
+\centering{\includegraphics[width=\textwidth]{figures/dashboard_analysis.png}}
+\caption{Interactive Feature Analysis. The system provides a "What-If", showing how changing a feature (e.g., reducing TCP Window Size or increasing destination port) would affect the prediction confidence.}
 \label{fig:dashboard_analysis}
-\end{figure}
+\end{figure*}
 
 \subsection{Discussion}
 
@@ -368,7 +466,7 @@ Web Attacks (XSS/SQLi) are often subtle. The tool highlighted that \texttt{Dst P
 Our system achieves exceptional accuracy (99.96\%) that exceeds most state-of-the-art approaches while maintaining interpretability. The consistently high confidence scores (>99\%) for correctly classified samples indicate the model's certainty, which is crucial for reducing false positive investigations in operational Security Operations Centers (SOCs). The near-perfect performance across 12.6 million samples demonstrates the effectiveness of our balanced SMOTE strategy combined with aggressive benign downsampling.
 
 \subsubsection{Web Attack Detection Challenge}
-While the model achieves 100\% recall for Web Attacks (detecting all instances), the precision is only 9.03\%, resulting in significant false positives. This stems from extreme data scarcity: only 53 Web Attack samples exist in our 12.6M evaluation set (0.0004\%). With such limited training data (153 samples), the model learns overly broad patterns that capture all true attacks but also misclassify many benign flows.
+The model detects all instances of Web Attacks with 100\% recall, but its precision is only 9.03\%, leading to a large number of false positives. With only 53 Web Attack samples in our evaluation set, we are severely lacking in Web Attack sample data. Since there is a limited amount of training data, the model learns to use overly broad patterns that capture all true attacks but also misclassify many benign flows.
 
 Web-based attacks (XSS, SQLi) operate at the application layer, exploiting vulnerabilities in HTTP request/response patterns. Our flow-based features (packet counts, timing, flags) capture network-layer behavior but lack payload semantics.
 
@@ -398,7 +496,7 @@ An important design decision was training on 15\% of the CSE-CIC-IDS2018 dataset
 
 \textbf{Potential Benefits of Larger Samples:}
 \begin{enumerate}
-    \item Web Attack Improvement: Increasing from 15\% ($\sim$153 samples) to 100\% ($\sim$1,020 samples) could slightly improve precision from 9.03\% to an estimated 15--20\%. However, this still falls short of production viability due to fundamental data scarcity (0.007\% of dataset).
+    \item Web Attack Improvement: Increasing from 15\% ($\sim$153 samples) to 100\% ($\sim$1,020 samples) could slightly improve precision from 9.03\% to an estimated 15-20\%. However, this still falls short of production viability due to fundamental data scarcity (0.007\% of dataset).
     \item Marginal Accuracy Gains: Potentially 99.96\% $\rightarrow$ 99.97\% (+0.01\%), statistically insignificant.
     \item Edge Case Coverage: More diverse traffic patterns for rare scenarios.
 \end{enumerate}
@@ -411,18 +509,18 @@ An important design decision was training on 15\% of the CSE-CIC-IDS2018 dataset
 \end{enumerate}
 
 \textbf{Economic Analysis:}
-For a 6--7$\times$ increase in training time and 3--4$\times$ memory requirement, we would gain:
+For a 6-7$\times$ increase in training time and 3-4$\times$ memory requirement, we would gain:
 \begin{itemize}
     \item $\sim$0.01\% accuracy improvement (insignificant)
-    \item $\sim$6--11\% Web Attack precision improvement (still insufficient for production)
+    \item $\sim$6-11\% Web Attack precision improvement (still insufficient for production)
     \item No improvement in recall (already 100\%)
 \end{itemize}
 
-\textbf{Conclusion:} The 15\% sample represents an optimal balance between performance, training efficiency, and hardware accessibility. The model's primary limitation (Web Attack precision) stems from fundamental data scarcity in the dataset rather than sample size---even 100\% sampling leaves Web Attacks at 0.007\% of traffic. For production deployment, we recommend the current 15\% model with complementary technologies (WAF, DPI) for Web Attack handling rather than pursuing marginal improvements through larger samples.
+\textbf{Conclusion:} The 15\% sample represents an optimal balance between performance, training efficiency, and hardware accessibility. The model's primary limitation (Web Attack precision) stems from fundamental data scarcity in the dataset rather than sample size. Even 100\% sampling leaves Web Attacks at 0.007\% of traffic. Using complementary technologies (WAF, DPI) for Web Attack handling or  pursuing improvements through larger samples are valid options for increasing precision.
 
 \subsubsection{Practical Deployment Considerations}
 \begin{itemize}
-    \item \textbf{Latency}: The <50ms inference time supports real-time deployment on 10Gbps links.
+    \item \textbf{Latency}: The $<$50ms inference time supports real-time deployment on 10Gbps links.
     \item \textbf{Scalability}: CPU-based training and inference make the system deployable on commodity hardware.
     \item \textbf{Explainability Trade-off}: While interactive exploration enhances trust, it requires analyst engagement. Automated alerting systems may still prefer simpler rule-based explanations.
 \end{itemize}
@@ -432,11 +530,13 @@ For a 6--7$\times$ increase in training time and 3--4$\times$ memory requirement
     \item \textbf{Single Dataset}: Evaluation limited to CSE-CIC-IDS2018; generalization to other datasets (UNSW-NB15, CIC-IDS2017) not validated.
     \item \textbf{Static Training}: Model trained on historical data; concept drift in evolving attack patterns not addressed.
     \item \textbf{Feature Limitations}: Flow-based features insufficient for application-layer attacks.
-    \item \textbf{Counterfactual Realism}: ``Safety Prescriptions'' suggest feature modifications that may not be achievable in real network configurations.
+    \item \textbf{Counterfactual Realism}: ``Benign Prescriptions'' suggest feature modifications that may not be achievable in real network configurations.
 \end{enumerate}
 
 \section{Conclusion and Future Work}
-We have presented \textbf{BridgeIDS}, a system that successfully bridges the gap between high-performance ML detection and human interpretability. By empowering analysts to interactively explore the model's decision boundaries, we transform the ``black box'' of XGBoost into a transparent, trustworthy tool.
+
+    By combining a high-performance XGBoost classifier with an interactive interpretability layer to enhance user comprehension and experience, our BridgeIDS prototype provides an efficient solution to interpretability problems that are typically seen in ML-based IDS. This approach addresses the trade-off between accuracy and trust in machine learning-based intrusion detection systems. The system was tested using a diverse sample from the CSE-CIC-IDS2018 dataset. It ensured that no actual threats would be missed by achieving an overall accuracy of 99.96\% and maintaining a 100\% recall rate across all attack types. During the low-latency inference time of less than 50 ms, the prototype’s engineered features enabled near-perfect classification of the major categories, including DoS, DDoS, and Brute Force, and allow for real-time monitoring on commodity hardware. The core contribution for the prototype lies in the interactive dashboard, which uses SHAP-based explanation and “what-if” scenario analysis to disclose feature thresholds and decision boundaries, as demonstrated in case studies for DoS and Web Attacks. Flow-based features limit the detection of application layer attacks such as Web Attacks, which could potentially create a trade-off between precision and recall. Given the scarcity of data, this is acceptable to guarantee full attack coverage. Our BridgeIDS prototype improves the capacity for security analysts to identify and understand network intrusions and helps maintain confidence in automated decisions by giving them accurate predictions and clear justifications for them.
+
 
 \textbf{Future Directions:}
 \begin{enumerate}

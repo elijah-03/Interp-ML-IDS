@@ -681,9 +681,10 @@
                 data: {
                     labels: data.x_values.map(v => {
                         // Format labels nicely
-                        if (Math.abs(v) > 1000) return (v / 1000).toFixed(1) + 'k';
+                        if (Math.abs(v) >= 1000000) return (v / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+                        if (Math.abs(v) >= 1000) return (v / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
                         if (Number.isInteger(v)) return v;
-                        return v.toFixed(2);
+                        return parseFloat(v.toFixed(2));
                     }),
                     datasets: [{
                         label: `Probability of ${data.target_class}`,
@@ -736,6 +737,13 @@
                         }
                     },
                     plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return `Probability: ${(context.parsed.y * 100).toFixed(1)}%`;
+                                }
+                            }
+                        },
                         annotation: {
                             annotations: {
                                 line1: {
@@ -760,6 +768,11 @@
                             title: {
                                 display: true,
                                 text: 'Probability'
+                            },
+                            ticks: {
+                                callback: function (value) {
+                                    return (value * 100).toFixed(0) + '%';
+                                }
                             }
                         },
                         x: {

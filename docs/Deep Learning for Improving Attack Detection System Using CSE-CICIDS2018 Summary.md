@@ -2,7 +2,7 @@
 
 ## Summary
 
-This 2022 research paper addresses **the exact same class imbalance problem** we're facing with CICIDS2018 dataset. Their solutions and results are highly relevant.
+This 2022 research paper addresses **the exact same class imbalance problem** we're facing with CICIDS2018 dataset. 
 
 ## Their Approach to Class Imbalance
 
@@ -151,7 +151,7 @@ Based on the paper's findings:
 
 **Result**: Model treats Web Attack as a real class, not noise
 
-## Immediate Action Items
+## Next Steps
 
 1. **Downsample Benign to 1M** (like the paper)
 2. **Increase SMOTE targets**:
@@ -166,33 +166,8 @@ Based on the paper's findings:
 
 ## Why This Will Work
 
-✅ **Proven on same dataset** (CICIDS2018)  
-✅ **Addresses root cause** (class imbalance)  
-✅ **Achieves 98%+ accuracy** in published research  
-✅ **Successfully detects Web Attacks**  
-✅ **Less than 6 months ago** (July 2022 - recent)
-
-## Comparison: Our Approach vs Paper
-
-| Aspect | Our Approach | Paper's Approach | Winner |
-|--------|-------------|------------------|---------|
-| Benign Samples | 5.7M | 1M | Paper |
-| Attack Samples | 100K-200K (SMOTE) | Balanced w/ Benign | Paper |
-| Total Dataset | 6.4M | 3.8M | Paper (less is more) |
-| Training Time | 25s | 6.8 hours | Paper (thorough) |
-| Web Attack F1 | 0% | High (not specified) | Paper |
-| Overall Accuracy | 99.62% | 98.31% | Ours (slight) |
-
-**Key Takeaway**: We prioritized overall accuracy by keeping huge Benign samples, but sacrificed minority class detection. The paper prioritized balanced performance across ALL classes.
-
-## Conclusion
-
-This paper validates that Web Attack detection IS POSSIBLE on CICIDS2018 with proper class balancing. Our main mistake was **not downsampling the Benign class aggressively enough**.
-
-**Recommended**: Implement their approach:
-1. Downsample Benign to 1-2M
-2. Upsample all attacks to 200K each with SMOTE
-3. Train for more epochs (300-500)
-4. Expect ~98% accuracy but WITH Web Attack detection
-
-This is a much better approach than trying to integrate CSIC 2010 or build a two-stage classifier.
+**Proven on same dataset** (CICIDS2018)  
+**Addresses root cause** (class imbalance)  
+**Achieves 98%+ accuracy** in published research  
+**Successfully detects Web Attacks**  
+**Less than 6 months ago** (July 2022 - recent)
